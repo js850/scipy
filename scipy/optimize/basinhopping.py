@@ -44,7 +44,6 @@ class _Storage(object):
     def _add(self, x, f):
         self.x = np.copy(x)
         self.f = f
-        print "adding", self.f
     def insert(self, x, f):
         if f < self.f:
             self._add(x, f)
@@ -82,6 +81,8 @@ class _BasinHopping(object):
         res = self.minimizer(x_after_step)
         x_after_quench = res.x
         energy_after_quench = res.fun
+        if not res.success:
+            print "warning: basinhoppping: minimize failure"
 
         #accept the move based on self.accept_tests
         #if any one of accept test is false, than reject the step
@@ -106,6 +107,7 @@ class _BasinHopping(object):
         eold = self.energy
         if accept:
             self.energy = etrial
+            self.x = np.copy(xtrial)
             self.storage.insert( self.x, self.energy )
 
         if self.iprint > 0:
@@ -297,12 +299,13 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         metropolis = _Metropolis(T) 
         accept_tests = [ metropolis ]
 
-    bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests)
+    bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests, iprint=iprint)
 
     for i in range(maxiter):
         bh.one_cycle()
 
     return bh.storage.get_lowest()
+
     if False:
         if full_output:
             return res['x'], res['fun'], res['T'], res['nfev'], res['nit'], \
@@ -313,22 +316,52 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
 if __name__ == "__main__":
     from numpy import cos, sin
-    from pygmin.potentials.lj import LJ
-    pot = LJ()
-    x0 = np.random.uniform(-1,1,3*38)
-    kwargs={ "method": "L-BFGS-B", "jac": True }
-    ret = basinhopping(x0, func=pot.getEnergyGradient, minimizer_kwargs=kwargs, maxiter=10000)
-    exit(1)
+    if False:
+        from pygmin.potentials.lj import LJ
+        pot = LJ()
+        x0 = np.random.uniform(-1,1,3*38)
+        kwargs={ "method": "L-BFGS-B", "jac": True }
+        ret = basinhopping(x0, func=pot.getEnergyGradient, minimizer_kwargs=kwargs, maxiter=100)
+        print ret
 
 
 
-    # minimum expected at ~-0.195
-    def func(x):
-        f =  cos(14.5*x-0.3) + (x+0.2)*x
-        df = np.array(14.5*sin(14.5*x-0.3) + 2.*x + 0.2)
-        return f, df
-    ret = basinhopping(func,1.0)
-    print ret
+    if False:
+        def func(x):
+            f =  cos(14.5*x-0.3) + (x+0.2)*x
+            df = np.array(-14.5*sin(14.5*x-0.3) + 2.*x + 0.2)
+            return f, df
+        # minimum expected at ~-0.195
+        kwargs={ "method": "L-BFGS-B", "jac": True } #, "options":{"disp":True} }
+        x0 = np.array(1.0)
+        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200, iprint=10)
+        print "minimum expected at ~", -0.195
+        print ret
 
-    # minimum expected at ~[-0.195, -0.1]
-    func = lambda x: cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
+    if False:
+        # minimum expected at ~[-0.195, -0.1]
+        def func(x):
+            f = cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
+            return f
+        kwargs={ "method": "L-BFGS-B"} #, "options":{"disp":True} }
+        x0 = np.array([1.0,1.])
+        import scipy.optimize
+        scipy.optimize.minimize(func, x0, **kwargs)
+        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=900, iprint=1)
+        print "minimum expected at ~", [-0.195, -0.1]
+        print ret
+
+    if True:
+        #try a function with much higher barriers between the local minima.
+        def func(x):
+            f =  5.*cos(14.5*x-0.3) + 2.*(x+0.2)*x
+            df = np.array(-5.*14.5*sin(14.5*x-0.3) + 2.*(2.*x + 0.2))
+            return f, df
+        # minimum expected at ~-0.195
+        kwargs={ "method": "L-BFGS-B", "jac": True } #, "options":{"disp":True} }
+        x0 = np.array(1.0)
+        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200, iprint=10)
+        print "minimum expected at ~", -0.1956
+        print ret
+
+

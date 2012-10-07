@@ -169,12 +169,15 @@ class _MinimizerWrapper(object):
     """
     wrap a minimizer function as a minimizer class
     """
-    def __init__(self, func, minimizer, **kwargs):
+    def __init__(self, minimizer, func=None, **kwargs):
         self.minimizer = minimizer
         self.func = func
         self.kwargs = kwargs
     def __call__(self, x0):
-        return self.minimizer(self.func, x0, **self.kwargs)
+        if self.func is None:
+            return self.minimizer(x0, **self.kwargs)
+        else:
+            return self.minimizer(self.func, x0, **self.kwargs)
 
 
 class _Metropolis(object):
@@ -196,50 +199,105 @@ class _Metropolis(object):
 
 
 
-def basinhopping(func, x0, args=(), full_output=0, optimizer=None,
-           T=1., maxiter=1000,
+def basinhopping(x0, func=None, args=(), optimizer=None,
+        minimizer=None, minimizer_kwargs=dict(),
+           maxiter=10000, T=1.0, stepsize=0.5, interval=50,
            iprint=1):
     """Minimize a function using the basin hopping algorithm
 
     Parameters
     ----------
-    func : callable ``f(x, *args)``
-        Function to be optimized.
     x0 : ndarray
         Initial guess.
+    func : callable ``f(x, *args)``, optional
+        Function to be optimized.  Either func or minimizer must be passed
+    args : tuple, optional
+        Extra arguments passed to the objective function and its
+        derivatives (Jacobian, Hessian).
+    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
+        Use this minizer rather than the default.  If the minimizer is given
+        then, func is not used.  basinhopping will get the function values from
+        the output of minimizer
+    minimizer_kwargs : tuple, optional
+        Extra arguments to be passed to the minimizer.  If argument minimizer
+        is specified, then it is passed to that, else it is passed to the default
+        scipy.optimize.minimize().  See scipy.optimize.minimize() for details.
+        If the default minimzer is used, some important options could be
+
+            method : the method to use in minimizations
+            jac : specify the jacobian for gradient minimizations
+            hess : specify the hessian for hessian based minimizations
+            tol : tolerance
+            
+    maxiter : integer, optional
+        The maximum number of basin hopping iterations
+    T : float, optional
+        The ``temperature`` parameter for the accept or reject criterion.
+    stepsize : float, optional
+        initial stepsize for use in the random displacement
+    interval : integer, optional
+        interval for how often to update the stepsize
+    iprint : integer, optional
+        The interval at which to print status information.  iprint < 0 for a
+        silent run
+
+
+    Returns
+    -------
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, and ``message``
+        which describes the cause of the termination. See `Result` for a
+        description of other attributes.
 
     Notes
     -----
-    Simulated annealing is a random algorithm which uses no derivative
-    information from the function being optimized. In practice it has
-    been more useful in discrete optimization than continuous
-    optimization, as there are usually better algorithms for continuous
-    optimization problems.
+    Basin hopping is a random algorithm which attemps to find the global
+    minimum of a smooth scalar function of one or more variables.  The algorith
+    was originally described by David Wales http://www-wales.ch.cam.ac.uk/
+    The algorithm is iterative with each iteration composed of the following
+    steps
+
+    1) random displacement of the coordinates
+
+    2) local minimization
+
+    3) accept or reject the new coordinates based on the minimized function
+    value.
+
 
     """
     x0 = np.array(x0)
 
     #set up minimizer
-    if True:
+    if minimizer is None and func is None:
+        raise ValueError("minimizer and func cannot both be None")
+    if callable(minimizer):
+        wrapped_minimizer = _MinimizerWrapper(minimizer, **minimizer_kwargs)
+    else:
         #use default
-        minimizer_kwargs = dict()
-        minimizer_kwargs["method"] = "L-BFGS-B"
-        minimizer_kwargs["jac"] = True
-        minimizer = _MinimizerWrapper(func, _minimize.minimize, **minimizer_kwargs)
+        #minimizer_kwargs = dict()
+        #minimizer_kwargs["method"] = "L-BFGS-B"
+        #minimizer_kwargs["jac"] = True
+        if len(args) > 0:
+            #should we be worried about overwriting?
+            minimizer_kwargs["args"] = args
+        wrapped_minimizer = _MinimizerWrapper(_minimize.minimize, func, **minimizer_kwargs)
         
     #set up step taking algorithm
     if True:
         #use default
-        displace = RandomDisplacement()
-        step_taking = AdaptiveStepsize(displace)
+        displace = RandomDisplacement(stepsize=stepsize)
+        verbose = iprint > 0
+        step_taking = AdaptiveStepsize(displace, interval=interval)
 
     #set up accept tests
-    #if True:
+    if True:
         ##use default
-    metropolis = _Metropolis(T) 
-    accept_tests = [ metropolis ]
+        metropolis = _Metropolis(T) 
+        accept_tests = [ metropolis ]
 
-    bh = _BasinHopping(x0, minimizer, step_taking, accept_tests)
+    bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests)
 
     for i in range(maxiter):
         bh.one_cycle()
@@ -258,7 +316,8 @@ if __name__ == "__main__":
     from pygmin.potentials.lj import LJ
     pot = LJ()
     x0 = np.random.uniform(-1,1,3*38)
-    ret = basinhopping(pot.getEnergyGradient, x0, maxiter=10000)
+    kwargs={ "method": "L-BFGS-B", "jac": True }
+    ret = basinhopping(x0, func=pot.getEnergyGradient, minimizer_kwargs=kwargs, maxiter=10000)
     exit(1)
 
 

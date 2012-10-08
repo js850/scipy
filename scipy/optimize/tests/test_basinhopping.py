@@ -39,10 +39,14 @@ class Minimizer(object):
         return res
 
 
-class TestAnneal(TestCase):
-    """ Tests for anneal """
+class TestBasinHopping(TestCase):
+    """ Tests for basinhopping """
     def setUp(self):
         """ Tests setup.
+
+        run tests based on the 1-D and 2-D functions described above.  These
+        are the same functions as used in the anneal algorithm with some
+        gradients added.
         """
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
@@ -66,24 +70,28 @@ class TestAnneal(TestCase):
 
     @dec.slow
     def test_1d_grad(self, use_wrapper=False):
+        """test 1d minimizations with gradient"""
         i = 0
         res = basinhopping(self.x0[i], func1d, minimizer_kwargs=self.kwargs, maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     @dec.slow
     def test_2d(self, use_wrapper=False):
+        """test 2d minimizations with gradient"""
         i = 1
         res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs, maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     @dec.slow
     def test_2d_nograd(self, use_wrapper=False):
+        """test 2d minimizations without gradient"""
         i = 1
         res = basinhopping(self.x0[i], func2d_nograd, minimizer_kwargs=self.kwargs_nograd, maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     @dec.slow
     def test_pass_minimizer(self, use_wrapper=False):
+        """test 2d minimizations with user defined minimizer"""
         i=1
         minimizer = Minimizer(func2d, **self.kwargs)
         res = basinhopping(self.x0[i], minimizer=minimizer, maxiter=self.maxiter, iprint=self.iprint)

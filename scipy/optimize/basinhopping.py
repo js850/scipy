@@ -10,18 +10,20 @@ from optimize import Result, _check_unknown_options
 # Basin Hopping
 
 """
-basin hopping algorithm
+notes for the basin hopping algorithm
 
 The important components of basin hopping are:
 
     step taking algorithm:
         The default for this should be random displacement with adaptive step size.
 
-        The user should be able to specify their own step taking algorithm.  question:  how do we combine
-        adaptive step size with user defined step taking?
+        The user should be able to specify their own step taking algorithm.
+        question:  how do we combine adaptive step size with user defined step
+        taking?
 
     optimizer:
-        This is the routine which does local minimization.  The default should be scipy lbfgs algorithm
+        This is the routine which does local minimization.  The default should
+        be scipy lbfgs algorithm
         
         The user should be able to specify their own minimizer.
 
@@ -154,6 +156,8 @@ class AdaptiveStepsize(object):
         takestep is modified to ensure the true acceptance rate is as close as
         possible to the target.
 
+        .. versionadded:: 0.13.0
+
         Parameters
         ----------
         takestep : callable
@@ -258,7 +262,8 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         minimizer=None, minimizer_kwargs=dict(),
            maxiter=10000, T=1.0, stepsize=0.5, interval=50,
            iprint=-1, niter_success=None):
-    """Minimize a function using the basin hopping algorithm
+    """
+    Find the global minimum of a function using the basin hopping algorithm
 
     Parameters
     ----------
@@ -267,23 +272,25 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     func : callable ``f(x, *args)``, optional
         Function to be optimized.  Either func or minimizer must be passed
     args : tuple, optional
-        Extra arguments passed to the objective function and its
-        derivatives (Jacobian, Hessian).
+        Extra arguments passed to the objective function and its derivatives
+        (Jacobian, Hessian).
     minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
         Use this minizer rather than the default.  If the minimizer is given
-        then func is not used.  basinhopping() will get the function values from
-        the output of minimizer.  The output must be an object with attributes
-        x and fun reporting the minimized coordinates and function value
+        then func is not used.  basinhopping() will get the function values
+        from the output of minimizer.  The output must be an object with
+        attributes x and fun reporting the minimized coordinates and function
+        value
     minimizer_kwargs : tuple, optional
         Extra arguments to be passed to the minimizer.  If argument minimizer
-        is specified, then it is passed to that, else it is passed to the default
-        scipy.optimize.minimize().  See scipy.optimize.minimize() for details.
-        If the default minimzer is used, some important options could be
+        is specified, then it is passed to that, else it is passed to the
+        default scipy.optimize.minimize().  See scipy.optimize.minimize() for
+        details.  If the default minimzer is used, some important options could
+        be
 
-            method : the minimization method
-            jac : specify the jacobian for gradient minimizations
-            hess : specify the hessian for hessian based minimizations
-            tol : tolerance
+            method - the minimization method
+            jac - specify the jacobian for gradient minimizations
+            hess - specify the hessian for hessian based minimizations
+            tol - tolerance
             
     maxiter : integer, optional
         The maximum number of basin hopping iterations
@@ -344,8 +351,9 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     .. [1] Wales, David J. 2003, Energy Landscapes, Cambridge University Press,
         Cambridge, UK
     .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
-    the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110
-    Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp 5111-5116
+        the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
+        110 Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp
+        5111-5116
 
 
     """

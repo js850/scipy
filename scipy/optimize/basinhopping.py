@@ -231,7 +231,7 @@ class _Metropolis(object):
 def basinhopping(x0, func=None, args=(), optimizer=None,
         minimizer=None, minimizer_kwargs=dict(),
            maxiter=10000, T=1.0, stepsize=0.5, interval=50,
-           iprint=1):
+           iprint=-1):
     """Minimize a function using the basin hopping algorithm
 
     Parameters
@@ -245,17 +245,17 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         derivatives (Jacobian, Hessian).
     minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
         Use this minizer rather than the default.  If the minimizer is given
-        then, func is not used.  basinhopping will get the function values from
+        then func is not used.  basinhopping() will get the function values from
         the output of minimizer.  The output must be an object with attributes
-        x, fun, success reporting the minimized coordinates and function value
-        and whether the minimizer exited successfully
+        x, fun and success reporting the minimized coordinates and function value
+        and whether the minimizer exited successfully.
     minimizer_kwargs : tuple, optional
         Extra arguments to be passed to the minimizer.  If argument minimizer
         is specified, then it is passed to that, else it is passed to the default
         scipy.optimize.minimize().  See scipy.optimize.minimize() for details.
         If the default minimzer is used, some important options could be
 
-            method : the method to use in minimizations
+            method : the minimization method
             jac : specify the jacobian for gradient minimizations
             hess : specify the hessian for hessian based minimizations
             tol : tolerance
@@ -264,8 +264,10 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         The maximum number of basin hopping iterations
     T : float, optional
         The ``temperature`` parameter for the accept or reject criterion.
+        Higher ``temperatures`` mean that larger jums in function value will be
+        accepted
     stepsize : float, optional
-        initial stepsize for use in the random displacement
+        initial stepsize for use in the random displacement.
     interval : integer, optional
         interval for how often to update the stepsize
     iprint : integer, optional
@@ -277,15 +279,16 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     -------
     res : Result
         The optimization result represented as a ``Result`` object.
-        Important attributes are: ``x`` the solution array, and ``message``
-        which describes the cause of the termination. See `Result` for a
-        description of other attributes.
+        Important attributes are: ``x`` the solution array, ``fun`` the value
+        of the function at the solution, and ``message`` which describes the
+        cause of the termination. See `Result` for a description of other
+        attributes.
 
     Notes
     -----
     Basin hopping is a random algorithm which attemps to find the global
     minimum of a smooth scalar function of one or more variables.  The algorith
-    was originally described by David Wales http://www-wales.ch.cam.ac.uk/
+    was originally described by David Wales http://www-wales.ch.cam.ac.uk/ .
     The algorithm is iterative with each iteration composed of the following
     steps
 
@@ -295,6 +298,26 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
     3) accept or reject the new coordinates based on the minimized function
     value.
+
+    This global minimization method has been shown to be extremely efficient on
+    a wide variety of problems in physics and chemistry.  It is especially
+    efficient when the function has many minima separatated by large barriers.
+    See the cambridge cluster database http://www-wales.ch.cam.ac.uk/CCD.html
+    for database of molecular systems that have been optimized primarily using
+    basin hopping.  This database includes minimization problems exceeding
+    300 degrees of freedom.
+
+    For global minimization problems there's no general way to know that you've
+    found the global solution.  The standard way is to run the algorithm until
+    the lowest minimum found stops changing.
+
+    References
+    ----------
+    .. [1] Wales, David J. 2003, Energy Landscapes, Cambridge University Press,
+        Cambridge, UK
+    .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
+    the Lowest Energy Structures of Lennard-Jones Clusters Containing up to 110
+    Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp 5111-5116
 
 
     """

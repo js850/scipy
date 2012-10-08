@@ -50,6 +50,9 @@ class _Storage(object):
     def insert(self, x, f):
         if f < self.f:
             self._add(x, f)
+            return True
+        else:
+            return False
     def get_lowest(self):
         return self.x, self.f
 
@@ -122,6 +125,7 @@ class _BasinHopping(object):
 
     def one_cycle(self):
         self.nstep += 1
+        newmin = False
 
         xtrial, etrial, accept = self._monte_carlo_step()
 
@@ -129,15 +133,19 @@ class _BasinHopping(object):
         if accept:
             self.energy = etrial
             self.x = np.copy(xtrial)
-            self.storage.insert( self.x, self.energy )
+            newmin = self.storage.insert( self.x, self.energy )
 
+        if newmin and self.iprint > 0:
+            print "found new global minimum on step %d with function value %g" % (self.nstep, self.energy)
         if self.iprint > 0:
             if self.nstep % self.iprint == 0:
                 self.print_report(etrial, accept)
 
+        return newmin
+
     def print_report(self, etrial, accept):
         xlowest, elowest = self.storage.get_lowest()
-        print "basinhopping step %d: energy %g trial_energy %g accepted %d lowest_energy %g" % (self.nstep, self.energy, etrial, accept, elowest)
+        print "basinhopping step %d: energy %g trial_f %g accepted %d lowest_f %g" % (self.nstep, self.energy, etrial, accept, elowest)
 
 class AdaptiveStepsize(object):
     def __init__( self, takestep, accept_rate=0.5, interval = 50, factor = 0.9, verbose=True ):
@@ -249,7 +257,7 @@ class _Metropolis(object):
 def basinhopping(x0, func=None, args=(), optimizer=None,
         minimizer=None, minimizer_kwargs=dict(),
            maxiter=10000, T=1.0, stepsize=0.5, interval=50,
-           iprint=-1):
+           iprint=-1, niter_success=None):
     """Minimize a function using the basin hopping algorithm
 
     Parameters
@@ -290,6 +298,9 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     iprint : integer, optional
         The interval at which to print status information.  iprint < 0 for a
         silent run
+    niter_success : integer, optional
+        Stop the run if the global minimum candidate remains the same for this
+        number of iterations.
 
 
     Returns
@@ -368,16 +379,27 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         metropolis = _Metropolis(T) 
         accept_tests = [ metropolis ]
 
+    if niter_success is None:
+        niter_success = maxiter + 2
+
     bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests, iprint=iprint)
 
+    count = 0
+    message = ["maximum iterations reached"]
     for i in range(maxiter):
-        bh.one_cycle()
+        newmin = bh.one_cycle()
+        count += 1
+        if newmin:
+            count = 0
+        elif count > niter_success:
+            message = ["success condition satisfied"]
+            break
+
 
     lowest = bh.storage.get_lowest()
     res = bh.res
     res.x = np.copy(lowest[0])
     res.fun = lowest[1]
-    res.success = True
     return res
 
 

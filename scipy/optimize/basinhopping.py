@@ -40,6 +40,9 @@ The important components of basin hopping are:
 
 class _Storage(object):
     def __init__(self, x, f):
+        """
+        Class used to store the lowest energy structure
+        """
         self._add(x, f)
     def _add(self, x, f):
         self.x = np.copy(x)
@@ -116,12 +119,31 @@ class _BasinHopping(object):
 
     def print_report(self, etrial, accept):
         xlowest, elowest = self.storage.get_lowest()
-        #print self.storage.get_lowest()
-        #print self.storage.get_lowest()[1]
         print "basinhopping step %d: energy %g trial_energy %g accepted %d lowest_energy %g" % (self.nstep, self.energy, etrial, accept, elowest)
 
 class AdaptiveStepsize(object):
     def __init__( self, takestep, accept_rate=0.5, interval = 50, factor = 0.9, verbose=True ):
+        """
+        Class to implement adaptive stepsize.  The step size used by class
+        takestep is modified to ensure the true acceptance rate is as close as
+        possible to the target.
+
+        Parameters
+        ----------
+        takestep : callable
+            The step taking routine.  Must contain modifiable attribute
+            takestep.stepsize
+        accept_rate : float, optional
+            The target step acceptance rate
+        interval : integer, optional
+            Interval for how often to update the stepsize
+        factor : float, optional
+            The step size is multiplied or divided by this factor upon each
+            update. 
+        verbose : bool, optional
+            Print informtation about each update
+
+        """
         self.takestep = takestep
         self.target_accept_rate = accept_rate
         self.interval = interval
@@ -161,6 +183,11 @@ class AdaptiveStepsize(object):
 
 
 class RandomDisplacement(object):
+    """
+    Add a random discplacement of maximum size stepsize to the coordinates
+
+    update x inplace
+    """
     def __init__(self, stepsize = 0.5):
         self.stepsize = stepsize
     def __call__(self, x):

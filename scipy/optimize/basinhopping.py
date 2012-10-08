@@ -73,6 +73,16 @@ class _BasinHopping(object):
 
         #initialize storage class
         self.storage = _Storage(self.x, self.energy)
+        
+        #initialize return object
+        self.res = Result()
+        if hasattr(res, "nfev"):
+            self.res.nfev = res.nfev
+        if hasattr(res, "njev"):
+            self.res.njev = res.njev
+        if hasattr(res, "nhev"):
+            self.res.nhev = res.nhev
+
 
     def _monte_carlo_step(self):
         #take a random step
@@ -84,8 +94,16 @@ class _BasinHopping(object):
         res = self.minimizer(x_after_step)
         x_after_quench = res.x
         energy_after_quench = res.fun
-        if not res.success:
-            print "warning: basinhoppping: minimize failure"
+        if hasattr(res, "success"):
+            if not res.success:
+                print "warning: basinhoppping: minimize failure"
+        if hasattr(res, "nfev"):
+            self.res.nfev += res.nfev
+        if hasattr(res, "njev"):
+            self.res.njev += res.njev
+        if hasattr(res, "nhev"):
+            self.res.nhev += res.nhev
+
 
         #accept the move based on self.accept_tests
         #if any one of accept test is false, than reject the step
@@ -247,8 +265,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         Use this minizer rather than the default.  If the minimizer is given
         then func is not used.  basinhopping() will get the function values from
         the output of minimizer.  The output must be an object with attributes
-        x, fun and success reporting the minimized coordinates and function value
-        and whether the minimizer exited successfully.
+        x and fun reporting the minimized coordinates and function value
     minimizer_kwargs : tuple, optional
         Extra arguments to be passed to the minimizer.  If argument minimizer
         is specified, then it is passed to that, else it is passed to the default
@@ -357,7 +374,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         bh.one_cycle()
 
     lowest = bh.storage.get_lowest()
-    res = Result()
+    res = bh.res
     res.x = np.copy(lowest[0])
     res.fun = lowest[1]
     res.success = True

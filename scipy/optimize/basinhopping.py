@@ -246,7 +246,9 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
         Use this minizer rather than the default.  If the minimizer is given
         then, func is not used.  basinhopping will get the function values from
-        the output of minimizer
+        the output of minimizer.  The output must be an object with attributes
+        x, fun, success reporting the minimized coordinates and function value
+        and whether the minimizer exited successfully
     minimizer_kwargs : tuple, optional
         Extra arguments to be passed to the minimizer.  If argument minimizer
         is specified, then it is passed to that, else it is passed to the default
@@ -318,7 +320,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         #use default
         displace = RandomDisplacement(stepsize=stepsize)
         verbose = iprint > 0
-        step_taking = AdaptiveStepsize(displace, interval=interval)
+        step_taking = AdaptiveStepsize(displace, interval=interval, verbose=verbose)
 
     #set up accept tests
     if True:
@@ -331,14 +333,13 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
     for i in range(maxiter):
         bh.one_cycle()
 
-    return bh.storage.get_lowest()
+    lowest = bh.storage.get_lowest()
+    res = Result()
+    res.x = np.copy(lowest[0])
+    res.fun = lowest[1]
+    res.success = True
+    return res
 
-    if False:
-        if full_output:
-            return res['x'], res['fun'], res['T'], res['nfev'], res['nit'], \
-                res['accept'], res['status']
-        else:
-            return res['x'], res['status']
 
 
 if __name__ == "__main__":
@@ -365,7 +366,7 @@ if __name__ == "__main__":
         print "minimum expected at ~", -0.195
         print ret
 
-    if False:
+    if True:
         # minimum expected at ~[-0.195, -0.1]
         def func(x):
             f = cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
@@ -374,7 +375,7 @@ if __name__ == "__main__":
         x0 = np.array([1.0,1.])
         import scipy.optimize
         scipy.optimize.minimize(func, x0, **kwargs)
-        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=900, iprint=1)
+        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200, iprint=10)
         print "minimum expected at ~", [-0.195, -0.1]
         print ret
 

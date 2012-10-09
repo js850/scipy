@@ -1,4 +1,4 @@
-# Original Author: Jacob Stevenson 2012
+#Original Author: Jacob Stevenson 2012
 
 
 import numpy as np
@@ -171,7 +171,7 @@ class AdaptiveStepsize(object):
             The step size is multiplied or divided by this factor upon each
             update. 
         verbose : bool, optional
-            Print informtation about each update
+            Print information about each update
 
         """
         self.takestep = takestep
@@ -214,7 +214,7 @@ class AdaptiveStepsize(object):
 
 class RandomDisplacement(object):
     """
-    Add a random discplacement of maximum size stepsize to the coordinates
+    Add a random displacement of maximum size, stepsize, to the coordinates
 
     update x inplace
     """
@@ -288,15 +288,15 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
         be
 
             method - the minimization method
-            jac - specify the jacobian for gradient minimizations
-            hess - specify the hessian for hessian based minimizations
+            jac - specify the Jacobian for gradient minimizations
+            hess - specify the Hessian for Hessian based minimizations
             tol - tolerance
             
     maxiter : integer, optional
         The maximum number of basin hopping iterations
     T : float, optional
         The ``temperature`` parameter for the accept or reject criterion.
-        Higher ``temperatures`` mean that larger jums in function value will be
+        Higher ``temperatures`` mean that larger jumps in function value will be
         accepted
     stepsize : float, optional
         initial stepsize for use in the random displacement.
@@ -321,8 +321,8 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
     Notes
     -----
-    Basin hopping is a random algorithm which attemps to find the global
-    minimum of a smooth scalar function of one or more variables.  The algorith
+    Basin hopping is a random algorithm which attempts to find the global
+    minimum of a smooth scalar function of one or more variables.  The algorithm
     was originally described by David Wales http://www-wales.ch.cam.ac.uk/ .
     The algorithm is iterative with each iteration composed of the following
     steps
@@ -336,8 +336,8 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
     This global minimization method has been shown to be extremely efficient on
     a wide variety of problems in physics and chemistry.  It is especially
-    efficient when the function has many minima separatated by large barriers.
-    See the cambridge cluster database http://www-wales.ch.cam.ac.uk/CCD.html
+    efficient when the function has many minima separated by large barriers.
+    See the Cambridge Cluster Database http://www-wales.ch.cam.ac.uk/CCD.html
     for database of molecular systems that have been optimized primarily using
     basin hopping.  This database includes minimization problems exceeding
     300 degrees of freedom.
@@ -392,6 +392,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
     bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests, iprint=iprint)
 
+    #start main iteration loop
     count = 0
     message = ["maximum iterations reached"]
     for i in range(maxiter):
@@ -403,6 +404,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
             message = ["success condition satisfied"]
             break
 
+    #finished.
 
     lowest = bh.storage.get_lowest()
     res = bh.res
@@ -414,17 +416,11 @@ def basinhopping(x0, func=None, args=(), optimizer=None,
 
 if __name__ == "__main__":
     from numpy import cos, sin
-    if False:
-        from pygmin.potentials.lj import LJ
-        pot = LJ()
-        x0 = np.random.uniform(-1,1,3*38)
-        kwargs={ "method": "L-BFGS-B", "jac": True }
-        ret = basinhopping(x0, func=pot.getEnergyGradient, minimizer_kwargs=kwargs, maxiter=100)
-        print ret
 
-
-
-    if False:
+    if True:
+        print ""
+        print ""
+        print "minimize a 1d function with gradient"
         def func(x):
             f =  cos(14.5*x-0.3) + (x+0.2)*x
             df = np.array(-14.5*sin(14.5*x-0.3) + 2.*x + 0.2)
@@ -437,6 +433,9 @@ if __name__ == "__main__":
         print ret
 
     if True:
+        print ""
+        print ""
+        print "minimize a 2d function without gradient"
         # minimum expected at ~[-0.195, -0.1]
         def func(x):
             f = cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
@@ -450,6 +449,9 @@ if __name__ == "__main__":
         print ret
 
     if True:
+        print ""
+        print ""
+        print "minimize a 1d function with large barriers"
         #try a function with much higher barriers between the local minima.
         def func(x):
             f =  5.*cos(14.5*x-0.3) + 2.*(x+0.2)*x

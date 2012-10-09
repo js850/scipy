@@ -153,7 +153,7 @@ from cobyla import fmin_cobyla
 from nonlin import *
 from slsqp import fmin_slsqp
 from nnls import nnls
-from basinhopping import basinhopping
+from _basinhopping import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester

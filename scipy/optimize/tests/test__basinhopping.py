@@ -54,47 +54,43 @@ class TestBasinHopping(TestCase):
         self.lower = (-3., [-3., -3.])
         self.tol = 3 #number of decimal places
 
-
-        # 'fast' and 'cauchy' succeed with maxiter=1000 but 'boltzmann'
-        # exits with status=3 until very high values. Keep this value
-        # reasonable though.
         self.maxiter = 100
         self.iprint = -1
 
         # fix random seed
         np.random.seed(1234)
 
-        self.kwargs={ "method": "L-BFGS-B", "jac": True } #, "options":{"disp":True} }
-        self.kwargs_nograd={ "method": "L-BFGS-B" } #, "options":{"disp":True} }
+        self.kwargs={ "method": "L-BFGS-B", "jac": True }
+        self.kwargs_nograd={ "method": "L-BFGS-B" }
 
-
-    @dec.slow
     def test_1d_grad(self, use_wrapper=False):
         """test 1d minimizations with gradient"""
         i = 0
-        res = basinhopping(self.x0[i], func1d, minimizer_kwargs=self.kwargs, maxiter=self.maxiter, iprint=self.iprint)
+        res = basinhopping(self.x0[i], func1d, minimizer_kwargs=self.kwargs,
+                maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @dec.slow
     def test_2d(self, use_wrapper=False):
         """test 2d minimizations with gradient"""
         i = 1
-        res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs, maxiter=self.maxiter, iprint=self.iprint)
+        res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @dec.slow
     def test_2d_nograd(self, use_wrapper=False):
         """test 2d minimizations without gradient"""
         i = 1
-        res = basinhopping(self.x0[i], func2d_nograd, minimizer_kwargs=self.kwargs_nograd, maxiter=self.maxiter, iprint=self.iprint)
+        res = basinhopping(self.x0[i], func2d_nograd,
+                minimizer_kwargs=self.kwargs_nograd, maxiter=self.maxiter,
+                iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @dec.slow
     def test_pass_minimizer(self, use_wrapper=False):
         """test 2d minimizations with user defined minimizer"""
         i=1
         minimizer = Minimizer(func2d, **self.kwargs)
-        res = basinhopping(self.x0[i], minimizer=minimizer, maxiter=self.maxiter, iprint=self.iprint)
+        res = basinhopping(self.x0[i], minimizer=minimizer,
+                maxiter=self.maxiter, iprint=self.iprint)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 

@@ -73,7 +73,6 @@ class _BasinHopping(object):
         self.minimizer = minimizer
         self.step_taking = step_taking
         self.accept_tests = accept_tests
-        print "accept_tests", accept_tests
         self.iprint = iprint
 
         self.nstep = 0
@@ -190,7 +189,7 @@ class _AdaptiveStepsize(object):
         self.target_accept_rate = accept_rate
         self.interval = interval
         self.factor = factor
-        self.verbose = True
+        self.verbose = verbose
 
         self.nstep = 0
         self.nstep_tot = 0
@@ -277,7 +276,7 @@ class _Metropolis(object):
 
 def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
                  minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
-                 interval=50, iprint=-1, niter_success=None):
+                 interval=50, disp=False, niter_success=None):
     """
     Find the global minimum of a function using the basin hopping algorithm
 
@@ -319,9 +318,8 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
         initial stepsize for use in the random displacement.
     interval : integer, optional
         interval for how often to update the stepsize
-    iprint : integer, optional
-        The interval at which to print status information.  iprint < 0 for a
-        silent run
+    disp : bool, optional
+        Set to True to print status messages
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
@@ -376,8 +374,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
     Examples
     --------
     The following example is a one dimensional minimization problem,  with many
-    local minima superimposed on a parabola.  The global minima is at,
-    approximately, x=-0.1560
+    local minima superimposed on a parabola.
 
     >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
     >>> x0=[1.]
@@ -416,6 +413,12 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
 
     """
     x0 = np.array(x0)
+
+    #turn printing on or off
+    if disp:
+        iprint = 1
+    else:
+        iprint = -1
 
     #set up minimizer
     if minimizer is None and func is None:
@@ -488,7 +491,7 @@ if __name__ == "__main__":
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                           iprint=10)
+                           disp=False)
         print "minimum expected at ~", -0.195
         print ret
 
@@ -507,7 +510,7 @@ if __name__ == "__main__":
         x0 = np.array([1.0, 1.])
         scipy.optimize.minimize(func, x0, **kwargs)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                           iprint=10)
+                           disp=False)
         print "minimum expected at ~", [-0.195, -0.1]
         print ret
 
@@ -527,13 +530,13 @@ if __name__ == "__main__":
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                           iprint=10)
+                           disp=False)
         print "minimum expected at ~", -0.1956
         print ret
-    
-    if True:
+
+    if False:
         func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
-        x0=[1.]
-        ret = basinhopping(x0, func, maxiter=200, iprint=10)
+        x0 = [1.]
+        ret = basinhopping(x0, func, maxiter=200, disp=False)
         print "minimum expected at ~", -0.195
         print ret

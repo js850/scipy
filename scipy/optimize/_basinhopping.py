@@ -540,3 +540,23 @@ if __name__ == "__main__":
         ret = basinhopping(x0, func, maxiter=200, disp=False)
         print "minimum expected at ~", -0.195
         print ret
+
+    if True:
+        print ""
+        print ""
+        print "try a harder 2d problem"
+        def func2d(x):
+            f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] + 
+                 cos(14.5 * x[1] - 0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1])
+            df = np.zeros(2)
+            df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
+            df[1] = -14.5 * sin(14.5 * x[1] - 0.3) + 2. * x[1] + 0.2 + x[0]
+            return f, df
+
+        kwargs = {"method": "L-BFGS-B", "jac": True}
+        x0 = np.array([1.0, 1.0])
+        ret = basinhopping(x0, func2d, minimizer_kwargs=kwargs, maxiter=200,
+                           disp=False)
+        print "minimum expected at ~", [-0.19415263, -0.19415263]
+        print ret
+

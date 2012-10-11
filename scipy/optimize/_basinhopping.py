@@ -24,7 +24,7 @@ import scipy.optimize
 #    optimizer:
 #        This is the routine which does local minimization.  The default should
 #        be scipy lbfgs algorithm
-#        
+#
 #        The user should be able to specify their own minimizer.
 #
 #    accept test:
@@ -39,7 +39,7 @@ import scipy.optimize
 #
 #        possibly also the best N structures found?
 
-# todo: 
+# todo:
 #   make the step taking algorithm passable?
 
 class _Storage(object):
@@ -48,20 +48,24 @@ class _Storage(object):
         Class used to store the lowest energy structure
         """
         self._add(x, f)
+
     def _add(self, x, f):
         self.x = np.copy(x)
         self.f = f
+
     def insert(self, x, f):
         if f < self.f:
             self._add(x, f)
             return True
         else:
             return False
+
     def get_lowest(self):
         return self.x, self.f
 
+
 class _BasinHopping(object):
-    def __init__(self, x0, minimizer, step_taking, accept_tests, iprint=1 ):
+    def __init__(self, x0, minimizer, step_taking, accept_tests, iprint=1):
         self.x = np.copy(x0)
         self.minimizer = minimizer
         self.step_taking = step_taking
@@ -80,7 +84,7 @@ class _BasinHopping(object):
 
         #initialize storage class
         self.storage = _Storage(self.x, self.energy)
-        
+
         #initialize return object
         self.res = scipy.optimize.Result()
         if hasattr(res, "nfev"):
@@ -89,7 +93,6 @@ class _BasinHopping(object):
             self.res.njev = res.njev
         if hasattr(res, "nhev"):
             self.res.nhev = res.nhev
-
 
     def _monte_carlo_step(self):
         #Take a random step.  Make a copy of x because the step_taking
@@ -111,13 +114,12 @@ class _BasinHopping(object):
         if hasattr(res, "nhev"):
             self.res.nhev += res.nhev
 
-
         #accept the move based on self.accept_tests
         #if any one of accept test is false, than reject the step
         accept = True
         for test in self.accept_tests:
             if not test(enew=energy_after_quench, xnew=x_after_quench,
-                    eold=self.energy, xold=self.x):
+                        eold=self.energy, xold=self.x):
                 accept = False
                 break
 
@@ -138,7 +140,7 @@ class _BasinHopping(object):
         if accept:
             self.energy = etrial
             self.x = np.copy(xtrial)
-            newmin = self.storage.insert( self.x, self.energy )
+            newmin = self.storage.insert(self.x, self.energy)
 
         if newmin and self.iprint > 0:
             print "found new global minimum on step %d with function value %g" \
@@ -154,9 +156,10 @@ class _BasinHopping(object):
         print "basinhopping step %d: energy %g trial_f %g accepted %d lowest_f %g" \
                 % (self.nstep, self.energy, etrial, accept, elowest)
 
+
 class AdaptiveStepsize(object):
-    def __init__( self, takestep, accept_rate=0.5, interval = 50, factor = 0.9,
-            verbose=True ):
+    def __init__(self, takestep, accept_rate=0.5, interval=50, factor=0.9,
+                 verbose=True):
         """
         Class to implement adaptive stepsize.  The step size used by class
         takestep is modified to ensure the true acceptance rate is as close as
@@ -175,7 +178,7 @@ class AdaptiveStepsize(object):
             Interval for how often to update the stepsize
         factor : float, optional
             The step size is multiplied or divided by this factor upon each
-            update. 
+            update.
         verbose : bool, optional
             Print information about each update
 
@@ -192,27 +195,27 @@ class AdaptiveStepsize(object):
 
     def __call__(self, x):
         return self.take_step(x)
+
     def _adjust_step_size(self):
         old_stepsize = self.takestep.stepsize
         accept_rate = float(self.naccept) / self.nstep
         if accept_rate > self.target_accept_rate:
             #We're accepting too many steps.  This generally means we're
-            #trapped in a basin.  Take bigger steps 
+            #trapped in a basin.  Take bigger steps
             self.takestep.stepsize /= self.factor
         else:
-            #We're not accepting enough steps.  Take smaller steps 
+            #We're not accepting enough steps.  Take smaller steps
             self.takestep.stepsize *= self.factor
         if self.verbose:
             print "adaptive stepsize: acceptance rate %f target %f new stepsize %g old stepsize %g" \
                     % (accept_rate, self.target_accept_rate,
                             self.takestep.stepsize, old_stepsize)
+
     def take_step(self, x):
         self.nstep += 1
         self.nstep_tot += 1
-
         if self.nstep % self.interval == 0:
             self._adjust_step_size()
-
         return self.takestep(x)
 
     def report(self, accept):
@@ -226,11 +229,13 @@ class RandomDisplacement(object):
 
     update x inplace
     """
-    def __init__(self, stepsize = 0.5):
+    def __init__(self, stepsize=0.5):
         self.stepsize = stepsize
+
     def __call__(self, x):
-        x += np.random.uniform(-self.stepsize, self.stepsize, np.shape(x) )
+        x += np.random.uniform(-self.stepsize, self.stepsize, np.shape(x))
         return x
+
 
 class _MinimizerWrapper(object):
     """
@@ -240,6 +245,7 @@ class _MinimizerWrapper(object):
         self.minimizer = minimizer
         self.func = func
         self.kwargs = kwargs
+
     def __call__(self, x0):
         if self.func is None:
             return self.minimizer(x0, **self.kwargs)
@@ -253,10 +259,12 @@ class _Metropolis(object):
         Metropolis acceptance criterion
         """
         self.beta = 1.0 / T
+
     def accept_reject(self, enew, eold):
-        w=min(1.0, np.exp(-(enew - eold) * self.beta ) )
+        w = min(1.0, np.exp(-(enew - eold) * self.beta))
         rand = np.random.rand()
         return w >= rand
+
     def __call__(self, **kwargs):
         """
         enew and eold are manditory in kwargs
@@ -264,11 +272,9 @@ class _Metropolis(object):
         return self.accept_reject(kwargs["enew"], kwargs["eold"])
 
 
-
-
 def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
-        minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
-        interval=50, iprint=-1, niter_success=None):
+                 minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
+                 interval=50, iprint=-1, niter_success=None):
     """
     Find the global minimum of a function using the basin hopping algorithm
 
@@ -298,7 +304,7 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
             jac - specify the Jacobian for gradient minimizations
             hess - specify the Hessian for Hessian based minimizations
             tol - tolerance
-            
+
     maxiter : integer, optional
         The maximum number of basin hopping iterations
     T : float, optional
@@ -376,28 +382,28 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
         if len(args) > 0:
             #should we be worried about overwriting?
             minimizer_kwargs["args"] = args
-        wrapped_minimizer = _MinimizerWrapper(
-                scipy.optimize.minimize, func, **minimizer_kwargs)
-        
+        wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
+                                              **minimizer_kwargs)
+
     #set up step taking algorithm
     if True:
         #use default
         displace = RandomDisplacement(stepsize=stepsize)
         verbose = iprint > 0
-        step_taking = AdaptiveStepsize(displace, interval=interval, 
-                verbose=verbose)
+        step_taking = AdaptiveStepsize(displace, interval=interval,
+                                       verbose=verbose)
 
     #set up accept tests
     if True:
         ##use default
-        metropolis = _Metropolis(T) 
-        accept_tests = [ metropolis ]
+        metropolis = _Metropolis(T)
+        accept_tests = [metropolis]
 
     if niter_success is None:
         niter_success = maxiter + 2
 
     bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests,
-            iprint=iprint)
+                       iprint=iprint)
 
     #start main iteration loop
     count = 0
@@ -420,22 +426,22 @@ def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,
     return res
 
 
-
 if __name__ == "__main__":
-
     if True:
         print ""
         print ""
         print "minimize a 1d function with gradient"
+
         def func(x):
-            f =  cos(14.5*x-0.3) + (x+0.2)*x
-            df = np.array(-14.5*sin(14.5*x-0.3) + 2.*x + 0.2)
+            f = cos(14.5 * x - 0.3) + (x + 0.2) * x
+            df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
             return f, df
+
         # minimum expected at ~-0.195
-        kwargs={ "method": "L-BFGS-B", "jac": True }
+        kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                iprint=10)
+                           iprint=10)
         print "minimum expected at ~", -0.195
         print ret
 
@@ -444,14 +450,17 @@ if __name__ == "__main__":
         print ""
         print "minimize a 2d function without gradient"
         # minimum expected at ~[-0.195, -0.1]
+
         def func(x):
-            f = cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
+            f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
+                                                                0.2) * x[0]
             return f
-        kwargs={ "method": "L-BFGS-B"}
-        x0 = np.array([1.0,1.])
+
+        kwargs = {"method": "L-BFGS-B"}
+        x0 = np.array([1.0, 1.])
         scipy.optimize.minimize(func, x0, **kwargs)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                iprint=10)
+                           iprint=10)
         print "minimum expected at ~", [-0.195, -0.1]
         print ret
 
@@ -460,16 +469,17 @@ if __name__ == "__main__":
         print ""
         print "minimize a 1d function with large barriers"
         #try a function with much higher barriers between the local minima.
+
         def func(x):
-            f =  5.*cos(14.5*x-0.3) + 2.*(x+0.2)*x
-            df = np.array(-5.*14.5*sin(14.5*x-0.3) + 2.*(2.*x + 0.2))
+            f = 5. * cos(14.5 * x - 0.3) + 2. * (x + 0.2) * x
+            df = np.array(-5. * 14.5 * sin(14.5 * x - 0.3) + 2. * (2. * x +
+                                                                   0.2))
             return f, df
+
         # minimum expected at ~-0.195
-        kwargs={ "method": "L-BFGS-B", "jac": True }
+        kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
-                iprint=10)
+                           iprint=10)
         print "minimum expected at ~", -0.1956
         print ret
-
-

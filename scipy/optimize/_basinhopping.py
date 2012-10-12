@@ -68,7 +68,7 @@ class _Storage(object):
 
 
 class _BasinHopping(object):
-    def __init__(self, x0, minimizer, step_taking, accept_tests, iprint=1):
+    def __init__(self, x0, minimizer, step_taking, accept_tests, storage=None, iprint=1):
         self.x = np.copy(x0)
         self.minimizer = minimizer
         self.step_taking = step_taking
@@ -79,22 +79,25 @@ class _BasinHopping(object):
         self.takestep_report = True
 
         #do initial minimization
-        res = minimizer(self.x)
-        self.x = np.copy(res.x)
-        self.energy = res.fun
+        minres = minimizer(self.x)
+        self.x = np.copy(minres.x)
+        self.energy = minres.fun
         print "basinhopping step %d: energy %g" % (self.nstep, self.energy)
 
         #initialize storage class
-        self.storage = _Storage(self.x, self.energy)
+        if storage is None:
+            self.storage = _Storage(self.x, self.energy)
+        else:
+            self.storage = storage
 
         #initialize return object
         self.res = scipy.optimize.Result()
-        if hasattr(res, "nfev"):
-            self.res.nfev = res.nfev
-        if hasattr(res, "njev"):
-            self.res.njev = res.njev
-        if hasattr(res, "nhev"):
-            self.res.nhev = res.nhev
+        if hasattr(minres, "nfev"):
+            self.res.nfev = minres.nfev
+        if hasattr(minres, "njev"):
+            self.res.njev = minres.njev
+        if hasattr(minres, "nhev"):
+            self.res.nhev = minres.nhev
 
     def _monte_carlo_step(self):
         #Take a random step.  Make a copy of x because the step_taking
@@ -103,32 +106,50 @@ class _BasinHopping(object):
         x_after_step = self.step_taking(x_after_step)
 
         #do a local minimization
-        res = self.minimizer(x_after_step)
-        x_after_quench = res.x
-        energy_after_quench = res.fun
-        if hasattr(res, "success"):
-            if not res.success:
+        minres = self.minimizer(x_after_step)
+        x_after_quench = minres.x
+        energy_after_quench = minres.fun
+        if hasattr(minres, "success"):
+            if not minres.success:
                 print "warning: basinhoppping: minimize failure"
-        if hasattr(res, "nfev"):
-            self.res.nfev += res.nfev
-        if hasattr(res, "njev"):
-            self.res.njev += res.njev
-        if hasattr(res, "nhev"):
-            self.res.nhev += res.nhev
+        if hasattr(minres, "nfev"):
+            self.res.nfev += minres.nfev
+        if hasattr(minres, "njev"):
+            self.res.njev += minres.njev
+        if hasattr(minres, "nhev"):
+            self.res.nhev += minres.nhev
 
         #accept the move based on self.accept_tests
-        #if any one of accept test is false, than reject the step
+        #If any test is false, than reject the step, except if
+        #any test returns the special value, the string 'force accept'.  In
+        #this ccase we accept the step regardless.  This can be used to
+        #forcefully escape from a local minima if normal basin hopping steps are
+        #not sufficient.
         accept = True
         for test in self.accept_tests:
-            if not test(energy_new=energy_after_quench, xnew=x_after_quench,
-                        energy_old=self.energy, xold=self.x):
-                accept = False
-                break
+            testres = test(energy_new=energy_after_quench, xnew=x_after_quench,
+                           energy_old=self.energy, xold=self.x)
+            if isinstance(testres, bool):
+                if testres:
+                    accept = False
+            elif isinstance(testres, str):
+                if testres == "force accept":
+                    accept = True
+                    break
+                else:
+                    raise(ValueError( 
+                        "accept test must return bool or string 'force accept'"))
+            else:
+                raise(ValueError( 
+                    "accept test must return bool or string 'force accept'"))
+
+
 
         #Report the result of the acceptance test to the take step class.  This
         #is for adaptive step taking
         if self.takestep_report:
-            self.step_taking.report(accept)
+            self.step_taking.report(accept, energy_new=energy_after_quench,
+                    xnew=x_after_quench, energy_old=self.energy, xold=self.x)
 
         return x_after_quench, energy_after_quench, accept
 
@@ -163,9 +184,9 @@ class _AdaptiveStepsize(object):
     def __init__(self, takestep, accept_rate=0.5, interval=50, factor=0.9,
                  verbose=True):
         """
-        Class to implement adaptive stepsize.  The step size used by class
-        takestep is modified to ensure the true acceptance rate is as close as
-        possible to the target.
+        Class to implement adaptive stepsize.  This class wraps the step taking
+        class and modifies the stepsize to ensure the true acceptance rate is
+        as close as possible to the target.
 
         .. versionadded:: 0.13.0
 
@@ -220,7 +241,7 @@ class _AdaptiveStepsize(object):
             self._adjust_step_size()
         return self.takestep(x)
 
-    def report(self, accept):
+    def report(self, accept, **kwargs):
         if accept:
             self.naccept += 1
 
@@ -271,7 +292,8 @@ class _Metropolis(object):
         """
         energy_new and energy_old are manditory in kwargs
         """
-        return self.accept_reject(kwargs["energy_new"], kwargs["energy_old"])
+        return bool(self.accept_reject(kwargs["energy_new"],
+                    kwargs["energy_old"]))
 
 
 def basinhopping(x0, func=None, args=(), optimizer=None, minimizer=None,

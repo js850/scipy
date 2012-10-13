@@ -4,7 +4,7 @@ Original Author: Jacob Stevenson 2012
 basinhopping: The basinhopping global optimization algorithm
 """
 
-__all__ = ['basinhopping']
+__all__ = ['basinhopping', 'basinhopping_advanced']
 
 import numpy as np
 from numpy import cos, sin
@@ -328,7 +328,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
 
             method - the minimization method
             args - tuple, optional
-                Extra arguments passed to the objective function and its
+                Extra arguments passed to the objective function (func) and its
                 derivatives (Jacobian, Hessian). See description for func
                 above.
             jac - specify the Jacobian for gradient minimizations
@@ -339,24 +339,29 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         Replace the default step taking routine with this routine.
         The default step taking routine is a random displacement of the
         coordinates, but other step taking algorithms may be better for some
-        systems.  take_step can optionally have a function take_step.report()
-        which can be used to adaptively improve the routine.  This has the
-        following form with f_new, x_new, f_old, x_ol being the new and old
-        function value and coordinates, and accept is bool holding whether or
-        not the new coordinates were accepted.
+        systems.  take_step can optionally have two attributes
 
-            take_step.report(accept, f_new=f_new, x_new=x_new, f_old=f_old,
-                             x_old=x_old)
+            take_step.stepsize - float
+            take_step.report - callable, ``report(accept, f_new=f_new,
+                                                  x_new=x_new, f_old=f_old,
+                                                  x_old=x_old)``
 
+        The function take_step.report() is called after each cycle and can be
+        used to adaptively improve the routine.  In the above, f_new, x_new,
+        f_old, and x_old are the new and old function value and coordinates,
+        and accept is bool holding whether or not the new coordinates were
+        accepted.  If take_step.report is not present and take_step.stepsize
+        is, basinhopping will adjust take_step.stepsize in order to optimize
+        the global minimum search.
     accept_test : callable, ``accept_test(f_new=f_new, x_new=x_new, f_old=fold,
                                           x_old=x_old)``, optional
         Define a test which will be used to judge whether or not to accept
-        the step.  This will be used in addition to the metropolis test based
+        the step.  This will be used in addition to the Metropolis test based
         on ``temperature`` T.  The acceptable return values are True, False, or
         "force accept".  If the latter, then this will overide any other tests
         in order to accept the step.  This can be used, for example, to
         forcefully escape from a local minimum that basinhopping is trapped in.
-    callback : callable, ``callback(f, x)``, optional
+    callback : callable, ``callback(x, f)``, optional
         Add a callback function which will be called each time a new minima is
         found.  This can be used, for example, to save the lowest N minima
         found.
@@ -402,13 +407,14 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     3) accept or reject the new coordinates based on the minimized function
     value.
 
-    This global minimization method has been shown to be extremely efficient on
-    a wide variety of problems in physics and chemistry.  It is especially
-    efficient when the function has many minima separated by large barriers.
-    See the Cambridge Cluster Database http://www-wales.ch.cam.ac.uk/CCD.html
-    for database of molecular systems that have been optimized primarily using
-    basin hopping.  This database includes minimization problems exceeding
-    300 degrees of freedom.
+    The acceptance test is based on the Metropolis criterion of standard Monte
+    Carlo integration.  This global minimization method has been shown to be
+    extremely efficient on a wide variety of problems in physics and chemistry.
+    It is especially efficient when the function has many minima separated by
+    large barriers.  See the Cambridge Cluster Database
+    http://www-wales.ch.cam.ac.uk/CCD.html for database of molecular systems
+    that have been optimized primarily using basin hopping.  This database
+    includes minimization problems exceeding 300 degrees of freedom.
 
     For global minimization problems there's no general way to know that you've
     found the global solution.  The standard way is to run the algorithm until
@@ -484,17 +490,27 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
                                               **minimizer_kwargs)
 
     #set up step taking algorithm
-    #is it possible to easily allow the user to optionally make use of
-    #_AdaptiveStepsize?
-    if take_step is None:
+    if take_step is not None:
+        if not callable(take_step):
+            raise ValueError("take_step must be callable")
+        # if take_step.stepsize exists, but take_step.report() doesn't, then
+        # then use _AdaptiveStepsize to control take_step.stepsize
+        if hasattr(take_step, "stepsize") and not hasattr(takestep, "report"):
+            mytake_step = _AdaptiveStepsize(take_step, interval=interval,
+                                            verbose=verbose)
+        else:
+            mytake_step = take_step
+    else:
         #use default
         displace = _RandomDisplacement(stepsize=stepsize)
         verbose = iprint > 0
-        take_step = _AdaptiveStepsize(displace, interval=interval,
-                                        verbose=verbose)
+        mytake_step = _AdaptiveStepsize(displace, interval=interval,
+                                      verbose=verbose)
 
     #set up accept tests
     if accept_test is not None:
+        if not callable(accept_test):
+            raise ValueError("accept_test must be callable")
         accept_tests = [accept_test]
     else:
         accept_tests = []
@@ -505,7 +521,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     if niter_success is None:
         niter_success = maxiter + 2
 
-    bh = _BasinHopping(x0, wrapped_minimizer, take_step, accept_tests,
+    bh = _BasinHopping(x0, wrapped_minimizer, mytake_step, accept_tests,
                        callback=callback, iprint=iprint)
 
     #start main iteration loop

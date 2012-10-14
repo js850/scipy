@@ -83,7 +83,8 @@ class _BasinHopping(object):
         minres = minimizer(self.x)
         self.x = np.copy(minres.x)
         self.energy = minres.fun
-        print "basinhopping step %d: energy %g" % (self.nstep, self.energy)
+        if self.iprint > 0:
+            print "basinhopping step %d: energy %g" % (self.nstep, self.energy)
 
         #initialize storage class
         self.callback = callback
@@ -429,45 +430,6 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         5111-5116
 
 
-    Examples
-    --------
-    The following example is a one dimensional minimization problem,  with many
-    local minima superimposed on a parabola.
-
-    >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
-    >>> x0=[1.]
-
-    Basinhoppin, internally, uses a local minimization algorithm.  We will use
-    the parameter minimizer_kwargs to tell basinhopping which algorithm to use
-    and how to set up that minimizer.  This parameter will be passed to
-    scipy.optimze.minimize()
-
-    >>> minimizer_kwargs = {"method": "BFGS"}
-    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
-    >>>                    maxiter=200)
-    >>> print "minimum expected at ~", [-0.195]
-    >>> print ret
-
-
-    Next consider a two dimensional minimization problem. Also, this time we
-    will use gradient information to significantly speed up the search.
-
-    >>> def func2d(x):
-    >>>     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
-    >>>                                                         0.2) * x[0]
-    >>>     df = np.zeros(2)
-    >>>     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
-    >>>     df[1] = 2. * x[1] + 0.2
-    >>>     return f, df
-
-    We'll also use a different minimizer, just for fun.  Also we must tell the
-    minimzer that our function returns both energy and gradient (jacobian)
-    >>> minimizer_kwargs = {"method": "L-BFGS-B", "jac"=True}
-    >>> x0 = [1.0, 1.0]
-    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs,
-    >>>                    maxiter=200)
-    >>> print "minimum expected at ~", [-0.195, -0.1]
-    >>> print ret.x
 
     """
     x0 = np.array(x0)
@@ -660,31 +622,27 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     scipy.optimze.minimize()
 
     >>> minimizer_kwargs = {"method": "BFGS"}
-    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
-    >>>                    maxiter=200)
-    >>> print "minimum expected at ~", [-0.195]
-    >>> print ret
-
+    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs, maxiter=200)
+    >>> print ret.fun, ret.x
+    -1.00087618444 [-0.19506755]
 
     Next consider a two dimensional minimization problem. Also, this time we
     will use gradient information to significantly speed up the search.
 
     >>> def func2d(x):
-    >>>     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
-    >>>                                                         0.2) * x[0]
-    >>>     df = np.zeros(2)
-    >>>     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
-    >>>     df[1] = 2. * x[1] + 0.2
-    >>>     return f, df
+    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+    ...     df = np.zeros(2)
+    ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
+    ...     df[1] = 2. * x[1] + 0.2
+    ...     return f, df
 
     We'll also use a different minimizer, just for fun.  Also we must tell the
     minimzer that our function returns both energy and gradient (jacobian)
-    >>> minimizer_kwargs = {"method": "L-BFGS-B", "jac"=True}
+    >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
     >>> x0 = [1.0, 1.0]
-    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs,
-    >>>                    maxiter=200)
-    >>> print "minimum expected at ~", [-0.195, -0.1]
-    >>> print ret.x
+    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs, maxiter=200)
+    >>> print ret.fun, ret.x
+    -1.01087618444 [-0.19506755 -0.1       ]
 
     """
     x0 = np.array(x0)

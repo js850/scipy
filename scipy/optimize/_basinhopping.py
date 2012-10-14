@@ -490,12 +490,14 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
                                               **minimizer_kwargs)
 
     #set up step taking algorithm
+    verbose = iprint > 0
     if take_step is not None:
         if not callable(take_step):
             raise ValueError("take_step must be callable")
         # if take_step.stepsize exists, but take_step.report() doesn't, then
         # then use _AdaptiveStepsize to control take_step.stepsize
-        if hasattr(take_step, "stepsize") and not hasattr(takestep, "report"):
+        if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
+            print "wrapping user takestep"
             mytake_step = _AdaptiveStepsize(take_step, interval=interval,
                                             verbose=verbose)
         else:
@@ -503,9 +505,8 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     else:
         #use default
         displace = _RandomDisplacement(stepsize=stepsize)
-        verbose = iprint > 0
         mytake_step = _AdaptiveStepsize(displace, interval=interval,
-                                      verbose=verbose)
+                                        verbose=verbose)
 
     #set up accept tests
     if accept_test is not None:

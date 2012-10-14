@@ -8,7 +8,9 @@ from numpy.testing import TestCase, run_module_suite, \
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping, minimize
+from scipy.optimize import basinhopping, basinhopping_advanced, minimize
+from scipy.optimize._basinhopping import _AdaptiveStepsize, _RandomDisplacement
+
 
 
 def func1d(x):
@@ -113,6 +115,116 @@ class TestBasinHopping(TestCase):
             res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
                                maxiter=self.maxiter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
+
+    #below here we are testing basinhopping_advanced
+
+    def test_bh_advanced(self):
+        """test 2d minimizations with gradient"""
+        i = 1
+        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                           maxiter=self.maxiter, disp=self.disp)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+
+    def test_pass_takestep(self):
+        class MyTakeStep(_RandomDisplacement):
+            """use a copy of displace, but have it set a special parameter to
+            make sure it's actually being used."""
+            def __init__(self):
+                self.been_called = False
+                return super(MyTakeStep, self).__init__()
+            def __call__(self, x):
+                self.been_called = True
+                return super(MyTakeStep, self).__call__(x)
+
+        takestep = MyTakeStep()
+        initial_step_size = takestep.stepsize
+        i = 1
+        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                           maxiter=self.maxiter, disp=self.disp, take_step=takestep)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+        assert_(takestep.been_called)
+        #make sure that the built in adaptive step size has been used
+        assert_(initial_step_size != takestep.stepsize)
+
+    def test_pass_takestep2(self):
+        class MyTakeStep(_RandomDisplacement):
+            """use a copy of displace, but have it set a special parameter to
+            make sure it's actually being used.
+
+            this time add a function report which overrides the default
+            adaptive step size routine.
+            """
+            def __init__(self):
+                self.been_called = False
+                return super(MyTakeStep, self).__init__()
+            def __call__(self, x):
+                self.been_called = True
+                return super(MyTakeStep, self).__call__(x)
+            def report(self, accept, **kwargs):
+                return
+
+
+        takestep = MyTakeStep()
+        initial_step_size = takestep.stepsize
+        i = 1
+        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                           maxiter=self.maxiter, disp=self.disp, take_step=takestep)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+        assert_(takestep.been_called)
+        #make sure that the built in adaptive step size has **not** been used
+        assert_(initial_step_size == takestep.stepsize)
+
+    def test_pass_accept_test(self):
+        class AcceptTest(_RandomDisplacement):
+            """pass a custom accept test
+
+            This does nothing but make sure it's being used and ensure all the
+            possible return values are accepted
+            """
+            def __init__(self):
+                self.been_called = False
+                self.ncalls = 0
+            def __call__(self, **kwargs):
+                self.been_called = True
+                self.ncalls += 1
+                if self.ncalls == 1:
+                    return False
+                elif self.ncalls == 2:
+                    return 'force accept'
+                else:
+                    return True
+
+        accept_test = AcceptTest()
+        i = 1
+        #there's no point in running it more than a few steps.
+        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                           maxiter=10, disp=self.disp,
+                           accept_test=accept_test)
+        #assert_almost_equal(res.x, self.sol[i], self.tol)
+        assert_(accept_test.been_called)
+
+    def test_pass_callback(self):
+        class CallBack(_RandomDisplacement):
+            """pass a custom callback function
+
+            This does nothing but make sure it's being used
+            """
+            def __init__(self):
+                self.been_called = False
+                self.ncalls = 0
+            def __call__(self, x, f):
+                self.been_called = True
+                self.ncalls += 1
+
+        callback = CallBack()
+        i = 1
+        #there's no point in running it more than a few steps.
+        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+                           maxiter=10, disp=self.disp,
+                           callback=callback)
+        #assert_almost_equal(res.x, self.sol[i], self.tol)
+        assert_(callback.been_called)
+
 
 if __name__ == "__main__":
     run_module_suite()

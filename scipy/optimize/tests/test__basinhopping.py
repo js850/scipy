@@ -103,18 +103,20 @@ class TestBasinHopping(TestCase):
                            maxiter=self.maxiter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    def check_minimizer(method):
+        i = 1
+        minimizer_kwargs = copy.copy(self.kwargs)
+        minimizer_kwargs["method"] = method
+        res = basinhopping(self.x0[i], func2d,
+                           minimizer_kwargs=self.kwargs,
+                           maxiter=self.maxiter, disp=self.disp)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
     def test_all_minimizers(self):
         """test 2d minimizations with gradient"""
-        i = 1
         methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
                    'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
-        minimizer_kwargs = copy.copy(self.kwargs)
         for method in methods:
-            minimizer_kwargs["method"] = method
-            res = basinhopping(self.x0[i], func2d,
-                               minimizer_kwargs=self.kwargs,
-                               maxiter=self.maxiter, disp=self.disp)
-            assert_almost_equal(res.x, self.sol[i], self.tol)
+            yield check_minimizer, method
 
     #below here we are testing basinhopping_advanced
 

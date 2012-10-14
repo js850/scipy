@@ -12,7 +12,6 @@ from scipy.optimize import basinhopping, basinhopping_advanced, minimize
 from scipy.optimize._basinhopping import _AdaptiveStepsize, _RandomDisplacement
 
 
-
 def func1d(x):
     f = cos(14.5 * x - 0.3) + (x + 0.2) * x
     df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
@@ -107,12 +106,13 @@ class TestBasinHopping(TestCase):
     def test_all_minimizers(self):
         """test 2d minimizations with gradient"""
         i = 1
-        methods = [ 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
+        methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
+                   'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
         minimizer_kwargs = copy.copy(self.kwargs)
         for method in methods:
             minimizer_kwargs["method"] = method
-            res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
+            res = basinhopping(self.x0[i], func2d,
+                               minimizer_kwargs=self.kwargs,
                                maxiter=self.maxiter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
@@ -121,8 +121,9 @@ class TestBasinHopping(TestCase):
     def test_bh_advanced(self):
         """test 2d minimizations with gradient"""
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=self.maxiter, disp=self.disp)
+        res = basinhopping_advanced(self.x0[i], func2d,
+                                    minimizer_kwargs=self.kwargs,
+                                    maxiter=self.maxiter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_pass_takestep(self):
@@ -132,6 +133,7 @@ class TestBasinHopping(TestCase):
             def __init__(self):
                 self.been_called = False
                 return super(MyTakeStep, self).__init__()
+
             def __call__(self, x):
                 self.been_called = True
                 return super(MyTakeStep, self).__call__(x)
@@ -139,8 +141,10 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=self.maxiter, disp=self.disp, take_step=takestep)
+        res = basinhopping_advanced(self.x0[i], func2d,
+                                    minimizer_kwargs=self.kwargs,
+                                    maxiter=self.maxiter, disp=self.disp,
+                                    take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
         #make sure that the built in adaptive step size has been used
@@ -157,18 +161,21 @@ class TestBasinHopping(TestCase):
             def __init__(self):
                 self.been_called = False
                 return super(MyTakeStep, self).__init__()
+
             def __call__(self, x):
                 self.been_called = True
                 return super(MyTakeStep, self).__call__(x)
+
             def report(self, accept, **kwargs):
                 return
-
 
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=self.maxiter, disp=self.disp, take_step=takestep)
+        res = basinhopping_advanced(self.x0[i], func2d,
+                                    minimizer_kwargs=self.kwargs,
+                                    maxiter=self.maxiter, disp=self.disp,
+                                    take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
         #make sure that the built in adaptive step size has **not** been used
@@ -184,6 +191,7 @@ class TestBasinHopping(TestCase):
             def __init__(self):
                 self.been_called = False
                 self.ncalls = 0
+
             def __call__(self, **kwargs):
                 self.been_called = True
                 self.ncalls += 1
@@ -197,10 +205,9 @@ class TestBasinHopping(TestCase):
         accept_test = AcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=10, disp=self.disp,
-                           accept_test=accept_test)
-        #assert_almost_equal(res.x, self.sol[i], self.tol)
+        res = basinhopping_advanced(self.x0[i], func2d,
+                                    minimizer_kwargs=self.kwargs, maxiter=10,
+                                    disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
 
     def test_pass_callback(self):
@@ -212,6 +219,7 @@ class TestBasinHopping(TestCase):
             def __init__(self):
                 self.been_called = False
                 self.ncalls = 0
+
             def __call__(self, x, f):
                 self.been_called = True
                 self.ncalls += 1
@@ -219,10 +227,9 @@ class TestBasinHopping(TestCase):
         callback = CallBack()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping_advanced(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=10, disp=self.disp,
-                           callback=callback)
-        #assert_almost_equal(res.x, self.sol[i], self.tol)
+        res = basinhopping_advanced(self.x0[i], func2d,
+                                    minimizer_kwargs=self.kwargs, maxiter=10,
+                                    disp=self.disp, callback=callback)
         assert_(callback.been_called)
 
 

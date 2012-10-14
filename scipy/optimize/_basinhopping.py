@@ -137,11 +137,14 @@ class _BasinHopping(object):
                     break
                 else:
                     raise ValueError(
-                        "accept test must return bool or string 'force accept'"
+                        "accept test must return bool or string 'force accept'. Type is", 
+                        type(testres)
                     )
             else:
                 raise ValueError(
-                    "accept test must return bool or string 'force accept'")
+                    "accept test must return bool or string 'force accept'. Type is",
+                        type(testres))
+                    
 
         #Report the result of the acceptance test to the take step class.  This
         #is for adaptive step taking
@@ -362,8 +365,8 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         in order to accept the step.  This can be used, for example, to
         forcefully escape from a local minimum that basinhopping is trapped in.
     callback : callable, ``callback(x, f)``, optional
-        Add a callback function which will be called each time a new minima is
-        found.  This can be used, for example, to save the lowest N minima
+        Add a callback function which will be called each time a minima is
+        accepted.  This can be used, for example, to save the lowest N minima
         found.
     maxiter : integer, optional
         The maximum number of basin hopping iterations
@@ -429,6 +432,84 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         110 Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp
         5111-5116
 
+    Examples
+    --------
+
+    >>> minimizer_kwargs = {"jac":True}
+    >>> x0 = [1.0, 1.0]
+    >>> def func2d(x):
+    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+    ...     df = np.zeros(2)
+    ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
+    ...     df[1] = 2. * x[1] + 0.2
+    ...     return f, df
+
+    Here is an example using a custom step taking routine.  Imagine you want
+    the first coordinate to take larger steps then the rest of the coordinates.
+    This can be implemented like so
+
+    >>> class MyTakeStep(object):
+    ...    def __init__(self, stepsize=0.5):
+    ...        self.stepsize = stepsize
+    ...    def __call__(self, x):
+    ...        s = self.stepsize
+    ...        x[0] += np.random.uniform(-2.*s, 2.*s)
+    ...        x[1:] += np.random.uniform(-s, s, x[1:].shape)
+    ...        return x
+
+    Since MyTakeStep.stepsize exists, but MyTakeStep.report() doesn't,
+    basinhopping_advanced will adjust the magnitude of stepsize to optimize the
+    search.  We'll use the same 2d function as before
+
+    >>> mytakestep = MyTakeStep()
+    >>> ret = basinhopping_advanced(x0, func2d,
+    ...                             minimizer_kwargs=minimizer_kwargs,
+    ...                             maxiter=200, take_step=mytakestep)
+    >>> print ret.fun, ret.x
+    -1.01087618444 [-0.19506755 -0.1       ]
+
+
+    Now let's do an example using a custom callback function which prints the
+    value of every minimum found
+
+    >>> def print_fun(x=None, f=None):
+    ...         print "at minima", f
+
+    We'll run it for only 10 basinhopping steps this time.
+
+    >>> np.random.seed(1)
+    >>> ret = basinhopping_advanced(x0, func2d,
+    ...                             minimizer_kwargs=minimizer_kwargs,
+    ...                             maxiter=10, callback=print_fun)
+    at minima 0.415919681092
+    at minima -0.43166279554
+    at minima -0.907266719691
+    at minima -1.01087618444
+    at minima -0.74248775277
+    at minima -0.74248775277
+    at minima -1.01087618444
+    at minima -0.907266719691
+    at minima -1.01087618444
+    
+    The minima at -1.01087618444 is actually the global minimum, found already
+    on the 4th iteration
+
+
+    Now let's impement bounds on the problem using a custom accept_test
+    >>> class MyBounds(object):
+    ...     def __init__(self, xmax=[1.1,1.1], xmin=[-1.1,-1.1] ):
+    ...         self.xmax = np.array(xmax)
+    ...         self.xmin = np.array(xmin)
+    ...     def __call__(self, **kwargs):
+    ...         x = kwargs["x_new"]
+    ...         tmax = bool(np.all(x <= self.xmax))
+    ...         tmin = bool(np.all(x >= self.xmin))
+    ...         return tmax and tmin
+
+    >>> mybounds = MyBounds()
+    >>> ret = basinhopping_advanced(x0, func2d,
+    ...                             minimizer_kwargs=minimizer_kwargs,
+    ...                             maxiter=10, accept_test=mybounds)
 
 
     """
@@ -458,7 +539,6 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         # if take_step.stepsize exists, but take_step.report() doesn't, then
         # then use _AdaptiveStepsize to control take_step.stepsize
         if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
-            print "wrapping user takestep"
             mytake_step = _AdaptiveStepsize(take_step, interval=interval,
                                             verbose=verbose)
         else:

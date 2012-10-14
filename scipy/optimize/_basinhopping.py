@@ -68,7 +68,8 @@ class _Storage(object):
 
 
 class _BasinHopping(object):
-    def __init__(self, x0, minimizer, step_taking, accept_tests, callback=None, iprint=1):
+    def __init__(self, x0, minimizer, step_taking, accept_tests, callback=None,
+                 iprint=1):
         self.x = np.copy(x0)
         self.minimizer = minimizer
         self.step_taking = step_taking
@@ -117,12 +118,11 @@ class _BasinHopping(object):
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 
-        #accept the move based on self.accept_tests
-        #If any test is false, than reject the step, except if
-        #any test returns the special value, the string 'force accept'.  In
-        #this ccase we accept the step regardless.  This can be used to
-        #forcefully escape from a local minima if normal basin hopping steps are
-        #not sufficient.
+        #accept the move based on self.accept_tests f any test is false, than
+        #reject the step, except if ny test returns the special value, the
+        #string 'force accept'.  In this ccase we accept the step regardless.
+        #This can be used to forcefully escape from a local minima if normal
+        #basin hopping steps are not sufficient.
         accept = True
         for test in self.accept_tests:
             testres = test(f_new=energy_after_quench, x_new=x_after_quench,
@@ -135,19 +135,19 @@ class _BasinHopping(object):
                     accept = True
                     break
                 else:
-                    raise ValueError( 
-                        "accept test must return bool or string 'force accept'")
+                    raise ValueError(
+                        "accept test must return bool or string 'force accept'"
+                    )
             else:
-                raise ValueError( 
+                raise ValueError(
                     "accept test must return bool or string 'force accept'")
-
-
 
         #Report the result of the acceptance test to the take step class.  This
         #is for adaptive step taking
         if hasattr(self.step_taking, "report"):
             self.step_taking.report(accept, f_new=energy_after_quench,
-                    x_new=x_after_quench, f_old=self.energy, x_old=self.x)
+                                    x_new=x_after_quench, f_old=self.energy,
+                                    x_old=self.x)
 
         return x_after_quench, energy_after_quench, accept
 
@@ -164,7 +164,7 @@ class _BasinHopping(object):
             newmin = self.storage.insert(self.x, self.energy)
             if callable(self.callback):
                 #should we pass acopy of x?
-                self.callback(self.x, self.energy) 
+                self.callback(self.x, self.energy)
 
         if newmin and self.iprint > 0:
             print "found new global minimum on step %d with function value %g" \
@@ -296,13 +296,12 @@ class _Metropolis(object):
         return bool(self.accept_reject(kwargs["f_new"],
                     kwargs["f_old"]))
 
+
 def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
-                 minimizer_kwargs=dict(), 
-                 take_step = None,
-                 accept_test = None,
-                 callback = None,
-                 maxiter=10000, T=1.0, stepsize=0.5,
-                 interval=50, disp=False, niter_success=None):
+                          minimizer_kwargs=dict(), take_step=None,
+                          accept_test=None, callback=None, maxiter=10000,
+                          T=1.0, stepsize=0.5, interval=50, disp=False,
+                          niter_success=None):
     """
     Find the global minimum of a function using the basin hopping algorithm
 
@@ -546,6 +545,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     res.fun = lowest[1]
     res.message = message
     return res
+
 
 def basinhopping(x0, func=None, optimizer=None, minimizer=None,
                  minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
@@ -817,8 +817,9 @@ if __name__ == "__main__":
         print ""
         print ""
         print "try a harder 2d problem"
+
         def func2d(x):
-            f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] + 
+            f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] +
                  cos(14.5 * x[1] - 0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1])
             df = np.zeros(2)
             df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
@@ -831,4 +832,3 @@ if __name__ == "__main__":
                            disp=True)
         print "minimum expected at ~", [-0.19415263, -0.19415263]
         print ret
-

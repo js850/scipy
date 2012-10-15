@@ -137,14 +137,13 @@ class _BasinHopping(object):
                     break
                 else:
                     raise ValueError(
-                        "accept test must return bool or string 'force accept'. Type is", 
+                        "accept test must return bool or string 'force accept'. Type is",
                         type(testres)
                     )
             else:
                 raise ValueError(
                     "accept test must return bool or string 'force accept'. Type is",
-                        type(testres))
-                    
+                    type(testres))
 
         #Report the result of the acceptance test to the take step class.  This
         #is for adaptive step taking
@@ -434,15 +433,46 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
 
     Examples
     --------
+    The following example is a one dimensional minimization problem,  with many
+    local minima superimposed on a parabola.
 
-    >>> minimizer_kwargs = {"jac":True}
-    >>> x0 = [1.0, 1.0]
+    >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
+    >>> x0=[1.]
+
+    Basinhopping, internally, uses a local minimization algorithm.  We will use
+    the parameter minimizer_kwargs to tell basinhopping which algorithm to use
+    and how to set up that minimizer.  This parameter will be passed to
+    scipy.optimze.minimize()
+
+    >>> minimizer_kwargs = {"method": "BFGS"}
+    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
+    ...                    maxiter=200)
+    >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
+    global minimum: x = -0.1951, f(x0) = -1.0009
+
+    Next consider a two dimensional minimization problem. Also, this time we
+    will use gradient information to significantly speed up the search.
+
     >>> def func2d(x):
-    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
+    ...                                                         0.2) * x[0]
     ...     df = np.zeros(2)
     ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
     ...     df[1] = 2. * x[1] + 0.2
     ...     return f, df
+
+    We'll also use a different minimizer, just for fun.  Also we must tell the
+    minimzer that our function returns both energy and gradient (jacobian)
+    >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
+    >>> x0 = [1.0, 1.0]
+    >>> ret = basinhopping_advanced(x0, func2d,
+    ...                             minimizer_kwargs=minimizer_kwargs,
+    ...                             maxiter=200)
+    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    ...                                                           ret.x[1],
+    ...                                                           ret.fun)
+    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
+
 
     Here is an example using a custom step taking routine.  Imagine you want
     the first coordinate to take larger steps then the rest of the coordinates.
@@ -465,15 +495,17 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
     ...                             maxiter=200, take_step=mytakestep)
-    >>> print ret.fun, ret.x
-    -1.01087618444 [-0.19506755 -0.1       ]
+    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    ...                                                           ret.x[1],
+    ...                                                           ret.fun)
+    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
 
     Now let's do an example using a custom callback function which prints the
     value of every minimum found
 
     >>> def print_fun(x=None, f=None):
-    ...         print "at minima", f
+    ...         print "at minima %.4f" % f
 
     We'll run it for only 10 basinhopping steps this time.
 
@@ -481,21 +513,22 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
     ...                             maxiter=10, callback=print_fun)
-    at minima 0.415919681092
-    at minima -0.43166279554
-    at minima -0.907266719691
-    at minima -1.01087618444
-    at minima -0.74248775277
-    at minima -0.74248775277
-    at minima -1.01087618444
-    at minima -0.907266719691
-    at minima -1.01087618444
-    
-    The minima at -1.01087618444 is actually the global minimum, found already
+    at minima 0.4159
+    at minima -0.9073
+    at minima -0.1021
+    at minima -0.1021
+    at minima 0.9102
+    at minima 0.9102
+    at minima -0.1021
+    at minima -1.0109
+    at minima -1.0109
+
+    The minima at -1.0109 is actually the global minimum, found already
     on the 4th iteration
 
 
-    Now let's impement bounds on the problem using a custom accept_test
+    Now let's implement bounds on the problem using a custom accept_test
+
     >>> class MyBounds(object):
     ...     def __init__(self, xmax=[1.1,1.1], xmin=[-1.1,-1.1] ):
     ...         self.xmax = np.array(xmax)
@@ -702,15 +735,17 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     scipy.optimze.minimize()
 
     >>> minimizer_kwargs = {"method": "BFGS"}
-    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs, maxiter=200)
-    >>> print ret.fun, ret.x
-    -1.00087618444 [-0.19506755]
+    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
+    ...                    maxiter=200)
+    >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
+    global minimum: x = -0.1951, f(x0) = -1.0009
 
     Next consider a two dimensional minimization problem. Also, this time we
     will use gradient information to significantly speed up the search.
 
     >>> def func2d(x):
-    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
+    ...                                                         0.2) * x[0]
     ...     df = np.zeros(2)
     ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
     ...     df[1] = 2. * x[1] + 0.2
@@ -720,9 +755,12 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     minimzer that our function returns both energy and gradient (jacobian)
     >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
     >>> x0 = [1.0, 1.0]
-    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs, maxiter=200)
-    >>> print ret.fun, ret.x
-    -1.01087618444 [-0.19506755 -0.1       ]
+    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs,
+    ...                    maxiter=200)
+    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    ...                                                           ret.x[1],
+    ...                                                           ret.fun)
+    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
     """
     x0 = np.array(x0)

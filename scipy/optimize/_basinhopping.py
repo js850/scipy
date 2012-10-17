@@ -68,8 +68,7 @@ class _Storage(object):
 
 
 class _BasinHopping(object):
-    def __init__(self, x0, minimizer, step_taking, accept_tests, callback=None,
-                 iprint=1):
+    def __init__(self, x0, minimizer, step_taking, accept_tests, iprint=1):
         self.x = np.copy(x0)
         self.minimizer = minimizer
         self.step_taking = step_taking
@@ -87,7 +86,6 @@ class _BasinHopping(object):
             print "basinhopping step %d: energy %g" % (self.nstep, self.energy)
 
         #initialize storage class
-        self.callback = callback
         self.storage = _Storage(self.x, self.energy)
 
         #initialize return object
@@ -156,28 +154,29 @@ class _BasinHopping(object):
 
     def one_cycle(self):
         self.nstep += 1
-        newmin = False
+        new_global_min = False
 
         xtrial, energy_trial, accept = self._monte_carlo_step()
 
-        energy_old = self.energy
         if accept:
             self.energy = energy_trial
             self.x = np.copy(xtrial)
-            newmin = self.storage.insert(self.x, self.energy)
+            new_global_min = self.storage.insert(self.x, self.energy)
 
-        if callable(self.callback):
-            #should we pass acopy of x?
-            self.callback(self.x, self.energy, accept)
-
-        if newmin and self.iprint > 0:
-            print "found new global minimum on step %d with function value %g" \
-                  % (self.nstep, self.energy)
+        #print some information
         if self.iprint > 0:
             if self.nstep % self.iprint == 0:
                 self.print_report(energy_trial, accept)
+            if new_global_min:
+                print "found new global minimum on step %d with function value %g" \
+                      % (self.nstep, self.energy)
 
-        return newmin
+        #save some varialbes as _BasinHopping attributes
+        self.xtrial = xtrial
+        self.energy_trial = energy_trial
+        self.accept = accept
+
+        return new_global_min
 
     def print_report(self, energy_trial, accept):
         xlowest, energy_lowest = self.storage.get_lowest()
@@ -365,9 +364,10 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         in order to accept the step.  This can be used, for example, to
         forcefully escape from a local minimum that basinhopping is trapped in.
     callback : callable, ``callback(x, f, accept)``, optional
-        Add a callback function which will be called each time a minima is
-        accepted.  This can be used, for example, to save the lowest N minima
-        found.
+        Add a callback function which will be called for each trial minima.
+        This can be used, for example, to save the lowest N minima found.
+        Also, callback can be used to specify a user defined stop criterion by
+        optionally returning True to stop the basinhopping routine.
     maxiter : integer, optional
         The maximum number of basin hopping iterations
     T : float, optional
@@ -520,10 +520,11 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     at minima -0.1021 accepted 1
     at minima 0.9102 accepted 1
     at minima 0.9102 accepted 1
-    at minima 0.9102 accepted 0
+    at minima 2.2945 accepted 0
     at minima -0.1021 accepted 1
     at minima -1.0109 accepted 1
     at minima -1.0109 accepted 1
+
 
     The minima at -1.0109 is actually the global minimum, found already
     on the 4th iteration
@@ -599,15 +600,24 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         niter_success = maxiter + 2
 
     bh = _BasinHopping(x0, wrapped_minimizer, mytake_step, accept_tests,
-                       callback=callback, iprint=iprint)
+                       iprint=iprint)
 
     #start main iteration loop
     count = 0
     message = ["maximum iterations reached"]
     for i in range(maxiter):
-        newmin = bh.one_cycle()
+        new_global_min = bh.one_cycle()
+
+        if callable(callback):
+            #should we pass acopy of x?
+            val = callback(bh.xtrial, bh.energy_trial, bh.accept)
+            if val is not None:
+                if val:
+                    message = ["callback returned true"]
+                    break
+
         count += 1
-        if newmin:
+        if new_global_min:
             count = 0
         elif count > niter_success:
             message = ["success condition satisfied"]
@@ -809,9 +819,9 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     count = 0
     message = ["maximum iterations reached"]
     for i in range(maxiter):
-        newmin = bh.one_cycle()
+        new_global_min = bh.one_cycle()
         count += 1
-        if newmin:
+        if new_global_min:
             count = 0
         elif count > niter_success:
             message = ["success condition satisfied"]

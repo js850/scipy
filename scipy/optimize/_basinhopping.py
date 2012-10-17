@@ -613,7 +613,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
                 if val:
-                    message = ["callback returned true"]
+                    message = ["callback returned True"]
                     break
 
         count += 1
@@ -631,6 +631,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     res.x = np.copy(lowest[0])
     res.fun = lowest[1]
     res.message = message
+    res.nit = i + 1
     return res
 
 
@@ -835,6 +836,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     res.x = np.copy(lowest[0])
     res.fun = lowest[1]
     res.message = message
+    res.nit = i + 1
     return res
 
 
@@ -919,6 +921,6 @@ if __name__ == "__main__":
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array([1.0, 1.0])
         ret = basinhopping(x0, func2d, minimizer_kwargs=kwargs, maxiter=200,
-                           disp=True)
+                           disp=False)
         print "minimum expected at ~", [-0.19415263, -0.19415263]
         print ret

@@ -214,7 +214,9 @@ class TestBasinHopping(TestCase):
         class CallBack(_RandomDisplacement):
             """pass a custom callback function
 
-            This does nothing but make sure it's being used
+            This makes sure it's being used.  It also returns True after 10
+            steps to ensure that it's stopping early.
+
             """
             def __init__(self):
                 self.been_called = False
@@ -223,14 +225,18 @@ class TestBasinHopping(TestCase):
             def __call__(self, x, f, accepted):
                 self.been_called = True
                 self.ncalls += 1
+                if self.ncalls == 10:
+                    return True
 
         callback = CallBack()
         i = 1
         #there's no point in running it more than a few steps.
         res = basinhopping_advanced(self.x0[i], func2d,
-                                    minimizer_kwargs=self.kwargs, maxiter=10,
+                                    minimizer_kwargs=self.kwargs, maxiter=30,
                                     disp=self.disp, callback=callback)
         assert_(callback.been_called)
+        assert_("callback" in res.message[0])
+        assert_(res.nit == 10)
 
 
 if __name__ == "__main__":

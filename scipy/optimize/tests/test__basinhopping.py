@@ -220,7 +220,7 @@ class TestBasinHopping(TestCase):
                 self.been_called = False
                 self.ncalls = 0
 
-            def __call__(self, x, f):
+            def __call__(self, x, f, accepted):
                 self.been_called = True
                 self.ncalls += 1
 

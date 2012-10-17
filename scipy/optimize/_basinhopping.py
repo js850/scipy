@@ -165,9 +165,10 @@ class _BasinHopping(object):
             self.energy = energy_trial
             self.x = np.copy(xtrial)
             newmin = self.storage.insert(self.x, self.energy)
-            if callable(self.callback):
-                #should we pass acopy of x?
-                self.callback(self.x, self.energy)
+
+        if callable(self.callback):
+            #should we pass acopy of x?
+            self.callback(self.x, self.energy, accept)
 
         if newmin and self.iprint > 0:
             print "found new global minimum on step %d with function value %g" \
@@ -191,8 +192,6 @@ class _AdaptiveStepsize(object):
         Class to implement adaptive stepsize.  This class wraps the step taking
         class and modifies the stepsize to ensure the true acceptance rate is
         as close as possible to the target.
-
-        .. versionadded:: 0.13.0
 
         Parameters
         ----------
@@ -308,6 +307,8 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     """
     Find the global minimum of a function using the basin hopping algorithm
 
+    .. versionadded:: 0.12.0
+
     Parameters
     ----------
     x0 : ndarray
@@ -363,7 +364,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
         "force accept".  If the latter, then this will overide any other tests
         in order to accept the step.  This can be used, for example, to
         forcefully escape from a local minimum that basinhopping is trapped in.
-    callback : callable, ``callback(x, f)``, optional
+    callback : callable, ``callback(x, f, accept)``, optional
         Add a callback function which will be called each time a minima is
         accepted.  This can be used, for example, to save the lowest N minima
         found.
@@ -398,7 +399,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     -----
     Basin hopping is a random algorithm which attempts to find the global
     minimum of a smooth scalar function of one or more variables.  The
-    algorithm was originally described by David Wales
+    algorithm was originally described by David Wales and Jonathan Doye
     http://www-wales.ch.cam.ac.uk/ .  The algorithm is iterative with each
     iteration composed of the following steps
 
@@ -407,7 +408,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     2) local minimization
 
     3) accept or reject the new coordinates based on the minimized function
-    value.
+       value.
 
     The acceptance test is based on the Metropolis criterion of standard Monte
     Carlo integration.  This global minimization method has been shown to be
@@ -504,8 +505,8 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     Now let's do an example using a custom callback function which prints the
     value of every minimum found
 
-    >>> def print_fun(x=None, f=None):
-    ...         print "at minima %.4f" % f
+    >>> def print_fun(x, f, accepted):
+    ...         print "at minima %.4f accepted %d" % (f, int(accepted))
 
     We'll run it for only 10 basinhopping steps this time.
 
@@ -513,15 +514,16 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
     ...                             maxiter=10, callback=print_fun)
-    at minima 0.4159
-    at minima -0.9073
-    at minima -0.1021
-    at minima -0.1021
-    at minima 0.9102
-    at minima 0.9102
-    at minima -0.1021
-    at minima -1.0109
-    at minima -1.0109
+    at minima 0.4159 accepted 1
+    at minima -0.9073 accepted 1
+    at minima -0.1021 accepted 1
+    at minima -0.1021 accepted 1
+    at minima 0.9102 accepted 1
+    at minima 0.9102 accepted 1
+    at minima 0.9102 accepted 0
+    at minima -0.1021 accepted 1
+    at minima -1.0109 accepted 1
+    at minima -1.0109 accepted 1
 
     The minima at -1.0109 is actually the global minimum, found already
     on the 4th iteration
@@ -627,6 +629,8 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
                  interval=50, disp=False, niter_success=None):
     """
     Find the global minimum of a function using the basin hopping algorithm
+
+    .. versionadded:: 0.12.0
 
     Parameters
     ----------

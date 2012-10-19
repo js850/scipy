@@ -304,7 +304,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
                           T=1.0, stepsize=0.5, interval=50, disp=False,
                           niter_success=None):
     """
-    Find the global minimum of a function using the basin hopping algorithm
+    Find the global minimum of a function using the basin-hopping algorithm
 
     .. versionadded:: 0.12.0
 
@@ -397,40 +397,55 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
 
     Notes
     -----
-    Basin hopping is a random algorithm which attempts to find the global
-    minimum of a smooth scalar function of one or more variables.  The
-    algorithm was originally described by David Wales and Jonathan Doye
-    http://www-wales.ch.cam.ac.uk/ .  The algorithm is iterative with each
-    iteration composed of the following steps
+    Basin-hopping is a stochastic algorithm which attempts to find the global
+    minimum of a smooth scalar function of one or more variables [1-4].  The
+    algorithm in its current form was described by David Wales and Jonathan
+    Doye [2] http://www-wales.ch.cam.ac.uk/. 
 
-    1) random displacement of the coordinates
+    The algorithm is iterative with each cycle composed of the following
+    features
+
+    1) random perturbation of the coordinates
 
     2) local minimization
 
     3) accept or reject the new coordinates based on the minimized function
-       value.
+       value
 
-    The acceptance test is based on the Metropolis criterion of standard Monte
-    Carlo integration.  This global minimization method has been shown to be
-    extremely efficient on a wide variety of problems in physics and chemistry.
-    It is especially efficient when the function has many minima separated by
-    large barriers.  See the Cambridge Cluster Database
-    http://www-wales.ch.cam.ac.uk/CCD.html for database of molecular systems
-    that have been optimized primarily using basin hopping.  This database
+    The acceptance test used here is the Metropolis criterion of standard Monte
+    Carlo algorithms, although there are many other possibilities [3]. 
+
+    This global minimization method has been shown to be extremely efficient
+    for a wide variety of problems in physics and chemistry.  It is
+    particularly useful when the function has many minima separated by large
+    barriers. See the Cambridge Cluster Database
+    http://www-wales.ch.cam.ac.uk/CCD.html for databases of molecular systems
+    that have been optimized primarily using basin-hopping.  This database
     includes minimization problems exceeding 300 degrees of freedom.
 
-    For global minimization problems there's no general way to know that you've
-    found the global solution.  The standard way is to run the algorithm until
-    the lowest minimum found stops changing.
+    For stochastic global optimization there is no way to determine if the true
+    global minimum has actually been found. Instead, as a consistency check,
+    the algorithm can be run from a number of different random starting points
+    to ensure the lowest minimum found in each example has converged to the
+    global minimum.
+
+    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/) for a
+    Fortran implementation of basin-hopping.  This implementation has many
+    different variations of the procedure described above, including more
+    advanced step taking algorithms and alternate acceptance criterion.
 
     References
     ----------
     .. [1] Wales, David J. 2003, Energy Landscapes, Cambridge University Press,
-        Cambridge, UK
+        Cambridge, UK.
     .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
         the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
-        110 Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp
-        5111-5116
+        110 Atoms.  Journal of Physical Chemistry A, 1997, 101, 5111.
+    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the 
+        multiple-minima problem in protein folding, Proc. Natl. Acad. Sci. USA,
+        1987, 84, 6611.
+    .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
+        crystals, and biomolecules, Science, 1999, 285, 1368.
 
     Examples
     --------
@@ -639,7 +654,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
                  minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
                  interval=50, disp=False, niter_success=None):
     """
-    Find the global minimum of a function using the basin hopping algorithm
+    Find the global minimum of a function using the basin-hopping algorithm
 
     .. versionadded:: 0.12.0
 
@@ -699,42 +714,58 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
         cause of the termination. See `Result` for a description of other
         attributes.
 
+
     Notes
     -----
-    Basin hopping is a random algorithm which attempts to find the global
-    minimum of a smooth scalar function of one or more variables.  The
-    algorithm was originally described by David Wales
-    http://www-wales.ch.cam.ac.uk/ .  The algorithm is iterative with each
-    iteration composed of the following steps
+    Basin-hopping is a stochastic algorithm which attempts to find the global
+    minimum of a smooth scalar function of one or more variables [1-4].  The
+    algorithm in its current form was described by David Wales and Jonathan
+    Doye [2] http://www-wales.ch.cam.ac.uk/. 
 
-    1) random displacement of the coordinates
+    The algorithm is iterative with each cycle composed of the following
+    features
+
+    1) random perturbation of the coordinates
 
     2) local minimization
 
     3) accept or reject the new coordinates based on the minimized function
-    value.
+       value
 
-    This global minimization method has been shown to be extremely efficient on
-    a wide variety of problems in physics and chemistry.  It is especially
-    efficient when the function has many minima separated by large barriers.
-    See the Cambridge Cluster Database http://www-wales.ch.cam.ac.uk/CCD.html
-    for database of molecular systems that have been optimized primarily using
-    basin hopping.  This database includes minimization problems exceeding
-    300 degrees of freedom.
+    The acceptance test used here is the Metropolis criterion of standard Monte
+    Carlo algorithms, although there are many other possibilities [3]. 
 
-    For global minimization problems there's no general way to know that you've
-    found the global solution.  The standard way is to run the algorithm until
-    the lowest minimum found stops changing.
+    This global minimization method has been shown to be extremely efficient
+    for a wide variety of problems in physics and chemistry.  It is
+    particularly useful when the function has many minima separated by large
+    barriers. See the Cambridge Cluster Database
+    http://www-wales.ch.cam.ac.uk/CCD.html for databases of molecular systems
+    that have been optimized primarily using basin-hopping.  This database
+    includes minimization problems exceeding 300 degrees of freedom.
+
+    For stochastic global optimization there is no way to determine if the true
+    global minimum has actually been found. Instead, as a consistency check,
+    the algorithm can be run from a number of different random starting points
+    to ensure the lowest minimum found in each example has converged to the
+    global minimum.
+
+    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/) for a
+    Fortran implementation of basin-hopping.  This implementation has many
+    different variations of the procedure described above, including more
+    advanced step taking algorithms and alternate acceptance criterion.
 
     References
     ----------
     .. [1] Wales, David J. 2003, Energy Landscapes, Cambridge University Press,
-        Cambridge, UK
+        Cambridge, UK.
     .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
         the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
-        110 Atoms.  Journal of Physical Chemistry A, 1997, 101 (28), pp
-        5111-5116
-
+        110 Atoms.  Journal of Physical Chemistry A, 1997, 101, 5111.
+    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the 
+        multiple-minima problem in protein folding, Proc. Natl. Acad. Sci. USA,
+        1987, 84, 6611.
+    .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
+        crystals, and biomolecules, Science, 1999, 285, 1368.
 
     Examples
     --------

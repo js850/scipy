@@ -400,7 +400,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     Basin-hopping is a stochastic algorithm which attempts to find the global
     minimum of a smooth scalar function of one or more variables [1-4].  The
     algorithm in its current form was described by David Wales and Jonathan
-    Doye [2] http://www-wales.ch.cam.ac.uk/. 
+    Doye [2] http://www-wales.ch.cam.ac.uk/.
 
     The algorithm is iterative with each cycle composed of the following
     features
@@ -413,7 +413,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
        value
 
     The acceptance test used here is the Metropolis criterion of standard Monte
-    Carlo algorithms, although there are many other possibilities [3]. 
+    Carlo algorithms, although there are many other possibilities [3].
 
     This global minimization method has been shown to be extremely efficient
     for a wide variety of problems in physics and chemistry.  It is
@@ -441,7 +441,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
         the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
         110 Atoms.  Journal of Physical Chemistry A, 1997, 101, 5111.
-    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the 
+    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the
         multiple-minima problem in protein folding, Proc. Natl. Acad. Sci. USA,
         1987, 84, 6611.
     .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
@@ -720,7 +720,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     Basin-hopping is a stochastic algorithm which attempts to find the global
     minimum of a smooth scalar function of one or more variables [1-4].  The
     algorithm in its current form was described by David Wales and Jonathan
-    Doye [2] http://www-wales.ch.cam.ac.uk/. 
+    Doye [2] http://www-wales.ch.cam.ac.uk/.
 
     The algorithm is iterative with each cycle composed of the following
     features
@@ -733,7 +733,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
        value
 
     The acceptance test used here is the Metropolis criterion of standard Monte
-    Carlo algorithms, although there are many other possibilities [3]. 
+    Carlo algorithms, although there are many other possibilities [3].
 
     This global minimization method has been shown to be extremely efficient
     for a wide variety of problems in physics and chemistry.  It is
@@ -761,7 +761,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
         the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
         110 Atoms.  Journal of Physical Chemistry A, 1997, 101, 5111.
-    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the 
+    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the
         multiple-minima problem in protein folding, Proc. Natl. Acad. Sci. USA,
         1987, 84, 6611.
     .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
@@ -809,66 +809,13 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
     global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
     """
-    x0 = np.array(x0)
 
-    #turn printing on or off
-    if disp:
-        iprint = 1
-    else:
-        iprint = -1
-
-    #set up minimizer
-    if minimizer is None and func is None:
-        raise ValueError("minimizer and func cannot both be None")
-    if callable(minimizer):
-        wrapped_minimizer = _MinimizerWrapper(minimizer, **minimizer_kwargs)
-    else:
-        #use default
-        wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
-                                              **minimizer_kwargs)
-
-    #set up step taking algorithm
-    if True:
-        #use default
-        displace = _RandomDisplacement(stepsize=stepsize)
-        verbose = iprint > 0
-        step_taking = _AdaptiveStepsize(displace, interval=interval,
-                                        verbose=verbose)
-
-    #set up accept tests
-    if True:
-        ##use default
-        metropolis = _Metropolis(T)
-        accept_tests = [metropolis]
-
-    if niter_success is None:
-        niter_success = maxiter + 2
-
-    bh = _BasinHopping(x0, wrapped_minimizer, step_taking, accept_tests,
-                       iprint=iprint)
-
-    #start main iteration loop
-    count = 0
-    message = ["maximum iterations reached"]
-    for i in range(maxiter):
-        new_global_min = bh.one_cycle()
-        count += 1
-        if new_global_min:
-            count = 0
-        elif count > niter_success:
-            message = ["success condition satisfied"]
-            break
-
-    #finished.
-
-    #prepare return object
-    lowest = bh.storage.get_lowest()
-    res = bh.res
-    res.x = np.copy(lowest[0])
-    res.fun = lowest[1]
-    res.message = message
-    res.nit = i + 1
-    return res
+    return basinhopping_advanced(x0, func=func, optimizer=optimizer,
+                                 minimizer=minimizer,
+                                 minimizer_kwargs=minimizer_kwargs,
+                                 maxiter=maxiter, T=T, stepsize=stepsize,
+                                 interval=interval, disp=disp,
+                                 niter_success=niter_success)
 
 
 if __name__ == "__main__":

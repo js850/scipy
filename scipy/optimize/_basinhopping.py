@@ -298,7 +298,7 @@ class _Metropolis(object):
                     kwargs["f_old"]))
 
 
-def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
+def basinhopping_advanced(x0, func=None, minimizer=None,
                           minimizer_kwargs=dict(), take_step=None,
                           accept_test=None, callback=None, maxiter=10000,
                           T=1.0, stepsize=0.5, interval=50, disp=False,
@@ -650,7 +650,7 @@ def basinhopping_advanced(x0, func=None, optimizer=None, minimizer=None,
     return res
 
 
-def basinhopping(x0, func=None, optimizer=None, minimizer=None,
+def basinhopping(x0, func=None, minimizer=None,
                  minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
                  interval=50, disp=False, niter_success=None):
     """
@@ -810,7 +810,7 @@ def basinhopping(x0, func=None, optimizer=None, minimizer=None,
 
     """
 
-    return basinhopping_advanced(x0, func=func, optimizer=optimizer,
+    return basinhopping_advanced(x0, func=func,
                                  minimizer=minimizer,
                                  minimizer_kwargs=minimizer_kwargs,
                                  maxiter=maxiter, T=T, stepsize=stepsize,

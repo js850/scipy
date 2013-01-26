@@ -265,11 +265,10 @@ class _Metropolis(object):
                     kwargs["f_old"]))
 
 
-def basinhopping(x0, func=None, minimizer=None,
-                          minimizer_kwargs=dict(), take_step=None,
-                          accept_test=None, callback=None, maxiter=10000,
-                          T=1.0, stepsize=0.5, interval=50, disp=False,
-                          niter_success=None):
+def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
+                 take_step=None, accept_test=None, callback=None,
+                 maxiter=10000, T=1.0, stepsize=0.5, interval=50, disp=False,
+                 niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -295,12 +294,6 @@ def basinhopping(x0, func=None, minimizer=None,
         interval for how often to update the stepsize
     disp : bool, optional
         Set to True to print status messages
-    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
-        Use this minizer rather than the default.  If the minimizer is given
-        then func is not used.  basinhopping() will get the function values
-        from the output of minimizer.  The output must be an object with
-        attributes `x` and `fun` reporting the minimized coordinates and
-        function value
     minimizer_kwargs : tuple, optional
         Extra arguments to be passed to the minimizer.  If argument minimizer
         is specified, then it is passed to that, else it is passed to the
@@ -308,14 +301,16 @@ def basinhopping(x0, func=None, minimizer=None,
         details.  If the default minimzer is used, some important options could
         be
 
-            method - the minimization method (e.g. L-BFGS-B)
+            method - the minimization method (e.g. "L-BFGS-B")
             args - tuple, optional
                 Extra arguments passed to the objective function (func) and its
-                derivatives (Jacobian, Hessian). See description for func
-                above.
-            jac - specify the Jacobian for gradient minimizations
-            tol - tolerance
+                derivatives (Jacobian, Hessian).
 
+    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
+        Use this minizer rather than the default.  If this is passed, then func
+        is not used.  basinhopping() will get the function values from the
+        output of minimizer.  The return must be an object with attributes `x`
+        and `fun` reporting the minimized coordinates and function value
     take_step : callable ``take_step(x)``, optional
         Replace the default step taking routine with this routine.  The default
         step taking routine is a random displacement of the coordinates, but
@@ -330,7 +325,7 @@ def basinhopping(x0, func=None, minimizer=None,
         The function take_step.report() is called after each cycle and can be
         used to adaptively improve the routine.  In the above, f_new, x_new,
         f_old, and x_old are the new and old function value and coordinates,
-        and accept is bool holding whether or not the new coordinates were
+        and accept is a bool reporting whether or not the new coordinates were
         accepted.  If take_step.report is not present and take_step.stepsize
         is, basinhopping will adjust take_step.stepsize in order to optimize
         the global minimum search.

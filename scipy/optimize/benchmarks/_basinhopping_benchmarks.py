@@ -21,7 +21,7 @@ import numpy as np
 from scipy.optimize import basinhopping, anneal
 
 class BenchmarkSystem(object):
-    Etol = 1e-6
+    Etol = 1e-4
     def __init__(self, potential):
         self.pot = potential
         
@@ -63,6 +63,8 @@ class BenchmarkSystem(object):
                            minimizer_kwargs=minimizer_kwargs,
                            **kwargs)
         print ret
+        print "target energy", self.pot.target_E
+        print "lowest energy found", ret.fun
         
     def do_benchmark(self, **kwargs):
 #        kwargs = {}
@@ -79,16 +81,21 @@ class BenchmarkSystem(object):
                            minimizer_kwargs=minimizer_kwargs,
                            **kwargs)        
         print ret
+        print "target energy", self.pot.target_E
+        print "lowest energy found", ret.fun
         
     def do_benchmark_anneal(self, **kwargs):
         x0 = self.get_random_configuration()
         ret = anneal(self.pot.getEnergy, x0, maxeval=3000)
+        x = ret[0]
         print "target energy", self.pot.target_E
-        print "lowest energy found", ret[1]
-        print "coordinates", ret[0]
+        print "lowest energy found", self.pot.getEnergy(x)
+        print "coordinates", x
 #        print ret
 
 class Ackey(object):
+    #note: this function is not smooth at the origin.  the gradient will never
+    #converge in the minimizer
     target_E = 0.
     xmin = np.array([-5,-5])
     xmax = np.array([5,5])

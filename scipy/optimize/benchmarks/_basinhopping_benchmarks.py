@@ -300,7 +300,7 @@ def benchmark_anneal():
 
 if __name__ == "__main__":
     print ""
-    print "doing benchmarks for anneal"
+    print "doing benchmarks for basinhopping"
     print ""
     benchmark_basinhopping()
 

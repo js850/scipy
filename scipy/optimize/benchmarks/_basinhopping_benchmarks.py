@@ -18,7 +18,7 @@ http://www-wales.ch.cam.ac.uk/CCD.html
 from numpy import exp, cos, sqrt, pi, sin
 import numpy as np
 
-from scipy.optimize import basinhopping
+from scipy.optimize import basinhopping, anneal
 
 class BenchmarkSystem(object):
     Etol = 1e-6
@@ -62,7 +62,6 @@ class BenchmarkSystem(object):
                            callback=self.stop_criterion, niter=1000,
                            minimizer_kwargs=minimizer_kwargs,
                            **kwargs)
-        
         print ret
         
     def do_benchmark(self, **kwargs):
@@ -78,18 +77,17 @@ class BenchmarkSystem(object):
         ret = basinhopping(self.pot.getEnergyGradient, x0, accept_test=self.accept_test, 
                            callback=self.stop_criterion, niter=1000,
                            minimizer_kwargs=minimizer_kwargs,
-                           **kwargs)
-        
+                           **kwargs)        
         print ret
-#        for i in range(1000):
-#            bh.run(1)
-#            if self.stop_criterion(bh.coords, bh.markovE):
-#                print "done"
-#                print "found the global minimum after", i, "basinhopping steps"
-#                print "E", bh.markovE
-#                print "coords", bh.coords
-#                break
-    
+        
+    def do_benchmark_anneal(self, **kwargs):
+        x0 = self.get_random_configuration()
+        ret = anneal(self.pot.getEnergy, x0, maxeval=3000)
+        print "target energy", self.pot.target_E
+        print "lowest energy found", ret[1]
+        print "coordinates", ret[0]
+#        print ret
+
 class Ackey(object):
     target_E = 0.
     xmin = np.array([-5,-5])
@@ -249,7 +247,7 @@ class LJ13(LennardJones):
     target_E = -44.326801
 
 
-if __name__ == "__main__":
+def benchmark_basinhopping():
     print ""
     print "doing benchmark for Ackey function"
     mysys = BenchmarkSystem(Ackey())
@@ -278,3 +276,41 @@ if __name__ == "__main__":
     #because LJ is not compiled, it takes too long to benchmark larger LJ systems
     #with a compiled version, LJ38, which is a quite difficult problem for it's size,
     #can be found in about 500000 function evaluations.
+
+def benchmark_anneal():
+    print ""
+    print "doing benchmark for Ackey function"
+    mysys = BenchmarkSystem(Ackey())
+    mysys.do_benchmark_anneal()
+
+    print ""
+    print "doing benchmark for Levi function"
+    mysys = BenchmarkSystem(Levi())
+    mysys.do_benchmark_anneal()
+
+    print ""
+    print "doing benchmark for Holder Table function"
+    mysys = BenchmarkSystem(HolderTable())
+    mysys.do_benchmark_anneal()
+
+    print ""
+    print "doing benchmark for a cluster of 13 Lennard Jones atoms"
+    mysys = BenchmarkSystem(LJ13())
+    mysys.do_benchmark_anneal()
+
+if __name__ == "__main__":
+    print ""
+    print "doing benchmarks for anneal"
+    print ""
+    benchmark_basinhopping()
+
+    #note: this is not a fair comparison because most of these are bounded 
+    #and I don't know how to apply bounds with anneal.  also I don't know how
+    #to optimize anneal
+    print ""
+    print "doing benchmarks for anneal"
+    print "note: this is not a fair comparison because most of these are bounded" 
+    print "and I don't know how to apply bounds with anneal.  Also I don't know how"
+    print "to optimize anneal, so I'm just using the default settings"
+    print ""
+    benchmark_anneal()
